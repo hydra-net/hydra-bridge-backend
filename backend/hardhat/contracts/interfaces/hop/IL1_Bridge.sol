@@ -4,12 +4,6 @@ pragma solidity 0.8.4;
 
 interface IL1_Bridge {
 
-      struct SwapData {
-        uint8 tokenIndex;
-        uint256 amountOutMin;
-        uint256 deadline;
-    }
-
   function sendToL2(
         uint256 chainId,
         address recipient,
