@@ -23,7 +23,7 @@ export const checkAllowance = async (
   }
 };
 
-export const buildTransaction = async (
+export const buildAllowanceTx = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -41,6 +41,7 @@ export const buildTransaction = async (
       data: result,
     });
   } catch (e) {
+    console.log(e)
     next(createError(e.statusCode, e.message));
   }
 };

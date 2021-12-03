@@ -1,10 +1,10 @@
 import express from "express";
-import { buildTransaction } from "../controllers/bridgeController";
-import { checkAllowance } from "../controllers/allowanceController";
+import {  } from "../controllers/bridgeController";
+import { checkAllowance, buildAllowanceTx } from "../controllers/allowanceController";
 
 const routes = express.Router();
 
-routes.get("/build-tx", buildTransaction);
-routes.get(`/approval/check-allowance`, checkAllowance);
+routes.get("/approval/build-tx", buildAllowanceTx);
+routes.get("/approval/check-allowance", checkAllowance);
 
 export default routes;

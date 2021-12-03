@@ -6,8 +6,25 @@ import {
 import { getProvider } from "../helpers/web3";
 import { ethers } from "ethers";
 import { erc20Abi } from "../common/abis/erc20Abi";
+import { Interface } from "@ethersproject/abi";
 require("dotenv").config();
 const { ETH_CHAIN_ID } = process.env;
+
+const ERC20_INTERFACE = new Interface([
+  {
+    constant: false,
+    inputs: [
+      { name: '_spender', type: 'address' },
+      { name: '_value', type: 'uint256' },
+    ],
+    name: 'approve',
+    outputs: [{ name: '', type: 'bool' }],
+    payable: false,
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+])
+
 
 export const getAllowance = async (dto: CheckAllowanceDto) => {
   try {
@@ -62,9 +79,11 @@ export const buildTx = async (
           dto.owner,
           dto.spender
         );
-        if (dto.amount === amountAllowed.toString()) {
+        const amountToSpend = ethers.BigNumber.from(dto.amount);
+        if (amountAllowed >= amountToSpend) {
+          const approveData = ERC20_INTERFACE.encodeFunctionData('approve', [dto.spender, ethers.utils.hexlify(amountToSpend)])
           return {
-            data: dto.amount,
+            data: approveData,
             to: dto.tokenAddress,
             from: dto.owner,
           };
