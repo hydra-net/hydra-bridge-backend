@@ -1,0 +1,195 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "version": "1.0.0",
+    "title": "Hydra Bridge",
+    "description": "Hydra Bridge API",
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  },
+  "basePath": "/api",
+  "schemes": ["http"],
+  "consumes": ["application/json"],
+  "produces": ["application/json"],
+
+  "paths": {
+    "/approval/check-allowance": {
+      "get": {
+        "tags": ["Allowances"],
+        "summary": "Check allowance for user",
+        "parameters": [
+          {
+            "name": "chainId",
+            "in": "query",
+            "description": "Chain id to bridge",
+            "required": "true"
+          },
+          {
+            "name": "owner",
+            "in": "query",
+            "description": "Owner of address that checks allowance",
+            "required": "true"
+          },
+          {
+            "name": "spender",
+            "in": "query",
+            "description": "Spender contract address",
+            "required": "true"
+          },
+          {
+            "name": "tokenAddress",
+            "in": "query",
+            "description": "Token address of tokens to spend",
+            "required": "true"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/AllowanceDto"
+            }
+          }
+        }
+      }
+    },
+    "/approval/build-tx": {
+      "get": {
+        "tags": ["Allowances"],
+        "summary": "Build transaction for asset allowance",
+        "parameters": [
+          {
+            "name": "chainId",
+            "in": "query",
+            "description": "Chain id to bridge",
+            "required": "true"
+          },
+          {
+            "name": "owner",
+            "in": "query",
+            "description": "Owner of address that checks allowance",
+            "required": "true"
+          },
+          {
+            "name": "spender",
+            "in": "query",
+            "description": "Spender contract address",
+            "required": "true"
+          },
+          {
+            "name": "tokenAddress",
+            "in": "query",
+            "description": "Token address of tokens to spend",
+            "required": "true"
+          },
+          {
+            "name": "amount",
+            "in": "query",
+            "description": "Amount to transfer",
+            "required": "true"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/BuildAllowanceResponseDto"
+            }
+          }
+        }
+      }
+    },
+    "/build-tx": {
+      "get": {
+        "tags": ["Bridge"],
+        "summary": "Build transaction for bridging assets",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/BuildTxRequestDto"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "AllowanceDto": {
+      "properties": {
+        "value": {
+          "type": "string"
+        },
+        "tokenAddress": {
+          "type": "string"
+        }
+      }
+    },
+    "BuildAllowanceRequestDto": {
+      "properties": {
+        "chainId": {
+          "type": "string"
+        },
+        "owner": {
+          "type": "string"
+        },
+        "spender": {
+          "type": "string"
+        },
+        "tokkenAddress": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "string"
+        }
+      }
+    },
+    "BuildAllowanceResponseDto": {
+      "properties": {
+        "data": {
+          "type": "string"
+        },
+        "to": {
+          "type": "string"
+        },
+        "from": {
+          "type": "string"
+        }
+      }
+    },
+    "BuildTxRequestDto": {
+      "required": [
+        "recipient",
+        "fromAsset",
+        "fromChainId",
+        "toAsset",
+        "toChainId",
+        "amount"
+      ],
+      "properties": {
+        "recipient": {
+          "type": "string"
+        },
+        "fromAsset": {
+          "type": "string"
+        },
+        "fromChainId": {
+          "type": "string"
+        },
+        "toAsset": {
+          "type": "string"
+        },
+        "toChainId": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "string"
+        }
+      }
+    }
+  },
+
+  "apis": ["api/routes/index.ts"]
+}
