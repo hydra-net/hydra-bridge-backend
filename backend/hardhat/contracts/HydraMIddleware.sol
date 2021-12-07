@@ -51,10 +51,6 @@ contract HydraMIddleware is Ownable, Pausable {
         IL1_Bridge(_hopBridge).sendToL2{value:msg.value}(chainId,recipient,msg.value,amountOutMin,deadline,relayer,relayerFee);
     }
 
-     function checkAllowance(address owner, address spender) external view returns (uint256){
-         return IERC20(address(this)).allowance(owner,spender);
-     }
-
     function setRootManager(address polygonRootChainManager) external onlyOwner { 
         _polygonRootChainManager = polygonRootChainManager;
     }
