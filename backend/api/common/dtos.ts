@@ -39,9 +39,8 @@ export interface BuildTxRequestDto {
 }
 
 export interface PolygonBridgeDto {
-  erc20Predicate?: string;
-  contractAddr?: string;
-  rootToken?: string;
-  amount?: string;
-  depositData?: string;
+  data: string;
+  to: string;
+  from: string;
+  value?: any;
 }

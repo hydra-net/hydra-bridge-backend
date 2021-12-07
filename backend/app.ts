@@ -2,11 +2,14 @@ import express from "express";
 import routes from "./api/routes";
 import swaggerUI from "swagger-ui-express";
 const swaggerDoc = require("./swagger.json") 
+import cors from "cors"
 require('dotenv').config();
 
 const { URL, VERSION, PORT } = process.env;
 
 const app = express();
+
+app.use(cors())
 app.use("/api", routes);
 
 app.use("/swagger", swaggerUI.serve, swaggerUI.setup(swaggerDoc));

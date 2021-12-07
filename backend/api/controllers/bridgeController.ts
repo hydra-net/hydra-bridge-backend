@@ -8,7 +8,22 @@ export const buildTransaction = async (
   next: NextFunction
 ) => {
   try {
-    const result = await buildTx(req.body);
+    const {
+      recipient,
+      fromAsset,
+      fromChainId,
+      toAsset,
+      toChainId,
+      amount,
+    }: any = req.query;
+    const result = await buildTx({
+      recipient,
+      fromAsset,
+      fromChainId,
+      toAsset,
+      toChainId,
+      amount,
+    });
     res.status(200).json({
       data: result,
     });

@@ -4,7 +4,7 @@ import {
   CheckAllowanceDto,
 } from "../common/dtos";
 import { getProvider } from "../helpers/web3";
-import { ethers } from "ethers";
+import { ethers, utils } from "ethers";
 import { erc20Abi } from "../common/abis/erc20Abi";
 import { Interface } from "@ethersproject/abi";
 require("dotenv").config();
@@ -14,17 +14,16 @@ const ERC20_INTERFACE = new Interface([
   {
     constant: false,
     inputs: [
-      { name: '_spender', type: 'address' },
-      { name: '_value', type: 'uint256' },
+      { name: "_spender", type: "address" },
+      { name: "_value", type: "uint256" },
     ],
-    name: 'approve',
-    outputs: [{ name: '', type: 'bool' }],
+    name: "approve",
+    outputs: [{ name: "", type: "bool" }],
     payable: false,
-    stateMutability: 'nonpayable',
-    type: 'function',
+    stateMutability: "nonpayable",
+    type: "function",
   },
-])
-
+]);
 
 export const getAllowance = async (dto: CheckAllowanceDto) => {
   try {
@@ -68,6 +67,7 @@ export const buildTx = async (
       dto.tokenAddress &&
       dto.amount
     ) {
+    
       if (dto.chainId === ETH_CHAIN_ID) {
         const rootToken = new ethers.Contract(
           dto.tokenAddress,
@@ -75,13 +75,20 @@ export const buildTx = async (
           getProvider()
         );
 
-        const amountAllowed = await rootToken.functions.allowance(
-          dto.owner,
-          dto.spender
-        );
+        const allwanceRes =
+          await rootToken.functions.allowance(dto.owner, dto.spender);
         const amountToSpend = ethers.BigNumber.from(dto.amount);
-        if (amountAllowed >= amountToSpend) {
-          const approveData = ERC20_INTERFACE.encodeFunctionData('approve', [dto.spender, ethers.utils.hexlify(amountToSpend)])
+        const amountAllowed = ethers.BigNumber.from(allwanceRes.toString())
+        const checkZero = ethers.BigNumber.from(0);
+
+        if (amountToSpend > amountAllowed) {
+          const diff = amountAllowed !== checkZero
+            ? amountToSpend.sub(amountAllowed) 
+            : amountToSpend;
+          const approveData = ERC20_INTERFACE.encodeFunctionData("approve", [
+            dto.spender,
+            ethers.utils.hexlify(diff),
+          ]);
           return {
             data: approveData,
             to: dto.tokenAddress,
