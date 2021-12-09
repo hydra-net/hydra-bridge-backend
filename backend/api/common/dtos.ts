@@ -1,4 +1,4 @@
-import { Asset, ChainId, Route } from "./enums";
+import { Asset, BridgeId, ChainId, Route, RouteId } from "./enums";
 
 export interface CheckAllowanceDto {
   chainId: string;
@@ -21,15 +21,17 @@ export interface BuildAllowanceResponseDto {
   from: string;
 }
 
-export interface QuoteRequestDto {
+export interface BuildTxRequestDto {
+  recipient: string;
   fromAsset: Asset;
-  fromChainId: string;
+  fromChainId: ChainId;
   toAsset: Asset;
-  toChainId: string;
+  toChainId: ChainId;
   amount: string;
+  routeId: RouteId
 }
 
-export interface BuildTxRequestDto {
+export interface QuoteRequestDto {
   recipient: string;
   fromAsset: Asset;
   fromChainId: ChainId;
@@ -38,9 +40,10 @@ export interface BuildTxRequestDto {
   amount: string;
 }
 
-export interface PolygonBridgeDto {
+export interface BuildTxResponseDto {
   data: string;
   to: string;
   from: string;
   value?: any;
+  bridgeId?: BridgeId
 }

@@ -4,7 +4,7 @@ import {
   CheckAllowanceDto,
 } from "../common/dtos";
 import { getProvider } from "../helpers/web3";
-import { ethers, utils } from "ethers";
+import { ethers } from "ethers";
 import { erc20Abi } from "../common/abis/erc20Abi";
 import { Interface } from "@ethersproject/abi";
 require("dotenv").config();
@@ -67,7 +67,6 @@ export const buildTx = async (
       dto.tokenAddress &&
       dto.amount
     ) {
-    
       if (dto.chainId === ETH_CHAIN_ID) {
         const rootToken = new ethers.Contract(
           dto.tokenAddress,
@@ -75,19 +74,16 @@ export const buildTx = async (
           getProvider()
         );
 
-        const allwanceRes =
-          await rootToken.functions.allowance(dto.owner, dto.spender);
+        const allwanceRes = await rootToken.functions.allowance(
+          dto.owner,
+          dto.spender
+        );
         const amountToSpend = ethers.BigNumber.from(dto.amount);
-        const amountAllowed = ethers.BigNumber.from(allwanceRes.toString())
-        const checkZero = ethers.BigNumber.from(0);
-
-        if (amountToSpend > amountAllowed) {
-          const diff = amountAllowed !== checkZero
-            ? amountToSpend.sub(amountAllowed) 
-            : amountToSpend;
+        const amountAllowed = ethers.BigNumber.from(allwanceRes.toString());
+        if (amountToSpend.gt(amountAllowed)) {
           const approveData = ERC20_INTERFACE.encodeFunctionData("approve", [
             dto.spender,
-            ethers.utils.hexlify(diff),
+            ethers.utils.hexlify(amountToSpend),
           ]);
           return {
             data: approveData,
