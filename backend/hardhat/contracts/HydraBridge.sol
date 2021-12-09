@@ -3,12 +3,14 @@
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "./interfaces/polygon/IRootChainManager.sol";
 import "./interfaces/hop/IL1_Bridge.sol";
 
-contract HydraMIddleware is Ownable, Pausable {
+contract HydraBridge is Ownable, Pausable {
+  using SafeERC20 for IERC20;
     /**
         Address of polygon bridge root chain manager contract
     */
@@ -27,12 +29,12 @@ contract HydraMIddleware is Ownable, Pausable {
 
     constructor(address polygonRootChainManager, address erc20Predicate, address hopBridge) {
          _polygonRootChainManager = polygonRootChainManager;
-          _erc20Predicate = erc20Predicate;
-          _hopBridge = hopBridge;
+        _erc20Predicate = erc20Predicate;
+        _hopBridge = hopBridge;
     }
 
      function sendToPolygon(address recipient, address rootToken, uint256 amount, bytes calldata depositData) external {
-        IERC20(rootToken).approve(_erc20Predicate,amount);
+        IERC20(rootToken).safeIncreaseAllowance(_erc20Predicate,amount);
         IERC20(rootToken).transferFrom(msg.sender,address(this),amount);
         IRootChainManager(_polygonRootChainManager).depositFor(recipient,rootToken,depositData);
     }
@@ -42,7 +44,7 @@ contract HydraMIddleware is Ownable, Pausable {
     }
 
     function sendToL2Hop(address rootToken, address recipient, uint256 chainId,uint256 amount,uint256 amountOutMin,uint256 deadline,address relayer,uint256 relayerFee) external {
-        IERC20(rootToken).approve(_hopBridge,amount);
+        IERC20(rootToken).safeIncreaseAllowance(_hopBridge,amount);
         IERC20(rootToken).transferFrom(msg.sender,address(this),amount);
         IL1_Bridge(_hopBridge).sendToL2(chainId,recipient,amount,amountOutMin,deadline,relayer,relayerFee);
     }
@@ -77,5 +79,11 @@ contract HydraMIddleware is Ownable, Pausable {
         _unpause();
     }
 
-   
+    function rescueFunds(
+        address token,
+        address userAddress,
+        uint256 amount
+    ) external onlyOwner {
+        IERC20(token).safeTransfer(userAddress, amount);
+    }
 }
