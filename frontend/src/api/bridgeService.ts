@@ -1,5 +1,5 @@
 import { IApiResponse } from "../common/commonTypes";
-import { Asset, ChainId } from "../common/enums";
+import { Asset, ChainId, Route, RouteId } from "../common/enums";
 import { fetchWrapper } from "../helpers/fetchWrapper";
 
 require("dotenv").config();
@@ -11,10 +11,11 @@ export const buildBridgeTx = async (
   fromChainId: ChainId,
   toAsset: Asset,
   toChainId: ChainId,
-  amount: string
+  amount: string,
+  routeId: RouteId
 ): Promise<any> => {
   const response: IApiResponse = await fetchWrapper.get(
-    `${REACT_APP_API_URL}/bridge/build-tx?recipient=${recipient}&fromAsset=${fromAsset}&fromChainId=${fromChainId}&toAsset=${toAsset}&toChainId=${toChainId}&amount=${amount}`
+    `${REACT_APP_API_URL}/bridge/build-tx?recipient=${recipient}&fromAsset=${fromAsset}&fromChainId=${fromChainId}&toAsset=${toAsset}&toChainId=${toChainId}&amount=${amount}&routeId=${routeId}`
   );
   return response.data;
 };

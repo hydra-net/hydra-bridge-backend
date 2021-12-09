@@ -12,3 +12,13 @@ export enum ChainId {
     Mainnet,
     Polygon
 }
+
+export enum BridgeId {
+    Polygon,
+    Hop
+}
+
+export enum RouteId {
+    Polygon,
+    Hop
+}

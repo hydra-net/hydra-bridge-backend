@@ -21,10 +21,11 @@ export const buildApprovalTx = async (
   owner: string,
   spender: string,
   tokenAddress: string,
-  amount: string
+  amount: string,
+  routeId: string
 ): Promise<any> => {
   const response: IApiResponse = await fetchWrapper.get(
-    `${REACT_APP_API_URL}/approval/build-tx?chainId=${chainId}&owner=${owner}&spender=${spender}&tokenAddress=${tokenAddress}&amount=${amount}`
+    `${REACT_APP_API_URL}/approval/build-tx?chainId=${chainId}&owner=${owner}&spender=${spender}&tokenAddress=${tokenAddress}&amount=${amount}&routeId=${routeId}`
   );
   return response.data;
 };
