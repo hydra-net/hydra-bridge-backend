@@ -1,5 +1,5 @@
 import { IApiResponse } from "../common/commonTypes";
-import { Asset, ChainId, Route, RouteId } from "../common/enums";
+import { Asset, ChainId, RouteId } from "../common/enums";
 import { fetchWrapper } from "../helpers/fetchWrapper";
 
 require("dotenv").config();

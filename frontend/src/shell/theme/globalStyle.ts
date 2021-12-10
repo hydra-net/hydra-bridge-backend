@@ -7,7 +7,7 @@ body, html {
 }
 
 body {
-  background-color: #ffffff;
+  background-color: #ECCFC3;
   font-family: 'Roboto', sans-serif;
 }
 

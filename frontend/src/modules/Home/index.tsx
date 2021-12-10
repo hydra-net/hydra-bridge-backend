@@ -1,120 +1,77 @@
-import Onboard from "bnc-onboard";
-import { useEffect, useState } from "react";
-import { ethers } from "ethers";
-import { API } from "bnc-onboard/dist/src/interfaces";
-import { buildApprovalTx, checkAllowance } from "../../api/allowancesService";
-import { buildBridgeTx } from "../../api/bridgeService";
-import { Asset, ChainId, RouteId } from "../../common/enums";
-require("dotenv").config();
+import { useState } from "react";
+import styled, { useTheme } from "styled-components";
+import Button from "../../common/components/Buttons/Button";
+import TransferChainSelects from "../../common/components/TransferChain/TransferChainSelects";
+import { getFlexCenter } from "../../common/styles";
+import useHome from "./useHome";
 
-const {
-  REACT_APP_NETWORK_ID,
-  REACT_APP_BLOCKNATIVE_KEY,
-  REACT_APP_HYDRA_BRIDGE_CONTRACT
-} = process.env;
+const Root = styled.div``;
+const Wrapper = styled.div`
+  margin: 0 auto;
+  max-width: 480px;
+  width: 100%;
+  background: rgb(255, 255, 255);
+  box-shadow: rgb(0 0 0 / 1%) 0px 0px 1px, rgb(0 0 0 / 4%) 0px 4px 8px,
+    rgb(0 0 0 / 4%) 0px 16px 24px, rgb(0 0 0 / 1%) 0px 24px 32px;
+  border-radius: 24px;
+  margin-top: 5rem;
+  margin-left: auto;
+  margin-right: auto;
+  z-index: 1;
+  padding: 10px;
+`;
 
-const wallets = [{ walletName: "metamask", preferred: true }];
+const Container = styled.div`
+  width: 100%;
+`;
+const ButtonContainer = styled.div`
+  ${getFlexCenter};
+  flex-direction: column;
+`;
 
-let provider: any;
 const Home = () => {
-  const [wallet, setWallet] = useState<any>();
-  const [onboard, setOnboard] = useState<API | null>();
-  const [buildApproveTx, setBuildApproveTx] = useState<any>();
-  const [brideTx, setBridgeTx] = useState<any>();
+  const [chainFrom, setChainFrom] = useState<string>("");
+  const [chainTo, setChainTo] = useState<string>("");
+  const theme = useTheme();
+  const {
+    handleWalletConnect,
+    // checkApprove,
+    // getApproveTxData,
+    // approveWallet,
+    // getBridgeTxData,
+    // bridgeAsset,
+  } = useHome();
 
-  useEffect(() => {
-    const onboard = Onboard({
-      dappId: REACT_APP_BLOCKNATIVE_KEY,
-      networkId: Number.parseInt(REACT_APP_NETWORK_ID || "5"),
-      subscriptions: {
-        wallet: (webWallet) => {
-          if (webWallet.provider) {
-            setWallet(wallet);
-
-            provider = new ethers.providers.Web3Provider(
-              webWallet.provider,
-              "any"
-            );
-
-            window.localStorage.setItem("selectedWallet", webWallet.name!);
-          } else {
-            provider = null;
-            setWallet({});
-          }
-        },
-      },
-      walletSelect: {
-        wallets,
-      },
-    });
-
-    setOnboard(onboard);
-  }, [wallet]);
-
-  const handleWalletConnect = async () => {
-    // Prompt user to select a wallet
-    await onboard?.walletSelect();
-
-    // Run wallet checks to make sure that user is ready to transact
-    await onboard?.walletCheck();
+  const handleSelectChainFrom = (option: any) => {
+    setChainFrom(option ? option.value : null);
   };
 
-  const checkApprove = async () => {
-    const { address } = onboard?.getState()!;
-    const res = await checkAllowance(
-      "5",
-      address,
-      REACT_APP_HYDRA_BRIDGE_CONTRACT!,
-      "0x98339D8C260052B7ad81c28c16C0b98420f2B46a"
-    );
-    console.log(res.data);
-  };
-
-  const getApproveTxData = async () => {
-    const { address } = onboard?.getState()!;
-    const res = await buildApprovalTx(
-      "5",
-      address,
-      REACT_APP_HYDRA_BRIDGE_CONTRACT!,
-      "0x98339D8C260052B7ad81c28c16C0b98420f2B46a",
-      "1000000",
-      "0"
-    );
-    console.log(res.data);
-    setBuildApproveTx(res.data);
-  };
-
-  const approveWallet = async () => {
-    const signer = provider.getUncheckedSigner();
-
-    signer
-      .sendTransaction(buildApproveTx)
-      .then((tx: any) => console.log(tx.hash));
-  };
-
-  const getBridgeTxData = async () => {
-    const { address } = onboard?.getState()!;
-    const res = await buildBridgeTx(address, Asset.Usdc, ChainId.Mainnet, Asset.Usdc, ChainId.Polygon, "1000000",RouteId.Hop);
-    console.log(res.data)
-    setBridgeTx(res.data);
-  };
-
-  const bridgeAsset = async () => {
-    const signer = provider.getUncheckedSigner();
-    const { data, to, from } = brideTx;
-    signer.sendTransaction({data, to, from}).then((tx: any) => console.log(tx.hash));
+  const handleSelectChainTo = (option: any) => {
+    setChainTo(option ? option.value : null);
   };
 
   return (
-    <div>
-      <div>Home</div>
-      <button onClick={handleWalletConnect}>Connect wallet</button>
-      <button onClick={checkApprove}>Check approval</button>
-      <button onClick={getApproveTxData}>Get approve data</button>
-      <button onClick={approveWallet}>Approve wallet</button>
-      <button onClick={getBridgeTxData}>Get bridge data</button>
-      <button onClick={bridgeAsset}>Bridge asset</button>
-    </div>
+    <Root>
+      <Wrapper>
+        <Container>
+          <TransferChainSelects
+            chainFrom={chainFrom}
+            chainTo={chainTo}
+            onSelectChainFrom={handleSelectChainFrom}
+            onSelectChainTo={handleSelectChainTo}
+          />
+          <ButtonContainer>
+            <Button
+              background={theme.buttonDefaultColor}
+              fontWeight={"700"}
+              onClick={handleWalletConnect}
+              width={"100%"}
+              text={"Connect wallet"}
+            />
+          </ButtonContainer>
+        </Container>
+      </Wrapper>
+    </Root>
   );
 };
 

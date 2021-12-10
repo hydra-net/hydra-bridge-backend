@@ -22,6 +22,20 @@ declare module "styled-components" {
       sm: string;
       xs: string;
     };
+
+    borderRadius: {
+      xs: string;
+      sm: string;
+      md: string;
+      lg: string;
+    };
+    backgroundColor: string;
+    lightBackgroundColorHover: string,
+    inputBackgroundColor: string,
+    inputBorderColor: string,
+    lightBackgroundColor: string,
+    greyColor: string
+    buttonDefaultColor: string
   }
 }
 
@@ -46,4 +60,18 @@ export const defaultTheme: DefaultTheme = {
     sm: "12px",
     xs: "10px",
   },
+
+  borderRadius: {
+    xs: "3px",
+    sm: "6px",
+    md: "10px",
+    lg: "20px",
+  },
+  backgroundColor: "#1e1e1e",
+  lightBackgroundColorHover:"#171717",
+  inputBackgroundColor: "rgba(255, 255, 255, 0.05)",
+  inputBorderColor: "rgba(255, 255, 255, 0.3)",
+  lightBackgroundColor: "#2d2d2d",
+  greyColor: "#a1a1a1",
+  buttonDefaultColor: "rgba(0,0,0,0.2)"
 };
