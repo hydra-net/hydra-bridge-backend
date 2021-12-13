@@ -5,6 +5,7 @@ import { API } from "bnc-onboard/dist/src/interfaces";
 import { buildApprovalTx, checkAllowance } from "../../api/allowancesService";
 import { buildBridgeTx } from "../../api/bridgeService";
 import { Asset, ChainId, RouteId } from "../../common/enums";
+import { getRouteFromId } from "../../helpers/routeHelper";
 require("dotenv").config();
 
 const {
@@ -18,10 +19,23 @@ const wallets = [{ walletName: "metamask", preferred: true }];
 let provider: any;
 
 export default function useHome() {
+  //wallet
   const [wallet, setWallet] = useState<any>();
-  const [onboard, setOnboard] = useState<API | null>();
+  const [onBoard, setOnboard] = useState<API | null>();
+
+  //transaction actions
   const [buildApproveTx, setBuildApproveTx] = useState<any>();
   const [brideTx, setBridgeTx] = useState<any>();
+  const [approveTxHash, setApproveTxHash] = useState<string>();
+  const [moveTxHash, setMoveTxHash] = useState<string>();
+
+  //errors
+  const [isError, setIsError] = useState<any>();
+
+  //checks
+  const [isConnected, setIsConnected] = useState<boolean>(false);
+  const [isApproved, setIsApproved] = useState<boolean>(false);
+  const [isAllowed, setIsAllowed] = useState<boolean>(false);
 
   useEffect(() => {
     const onboard = Onboard({
@@ -50,79 +64,121 @@ export default function useHome() {
     });
 
     setOnboard(onboard);
+    console.log(onBoard);
   }, [wallet]);
 
-  const handleWalletConnect = async () => {
+  const onConnectWallet = async () => {
     // Prompt user to select a wallet
-    await onboard?.walletSelect();
+    await onBoard?.walletSelect();
 
     // Run wallet checks to make sure that user is ready to transact
-    await onboard?.walletCheck();
+    const isReady = await onBoard?.walletCheck();
+    setIsConnected(isReady!);
   };
 
-  const checkApprove = async () => {
-    const { address } = onboard?.getState()!;
-    const res = await checkAllowance(
-      "5",
-      address,
-      REACT_APP_HYDRA_BRIDGE_CONTRACT!,
-      "0x98339D8C260052B7ad81c28c16C0b98420f2B46a"
-    );
-    console.log(res.data);
+  const onCheckAllowance = async (
+    amountIn: string,
+    chainId: string,
+    tokenAddress: string
+  ) => {
+    try {
+      const { address } = onBoard?.getState()!;
+      const res = await checkAllowance(
+        chainId,
+        address,
+        REACT_APP_HYDRA_BRIDGE_CONTRACT!,
+        tokenAddress
+      );
+      const amountToSpend = ethers.BigNumber.from(amountIn);
+      const amountAllowed = ethers.BigNumber.from(res.toString());
+      setIsAllowed(amountToSpend.gte(amountAllowed));
+    } catch (e) {
+      console.log(e);
+      setIsError(e);
+    }
   };
 
-  const getApproveTxData = async () => {
-    const { address } = onboard?.getState()!;
-    const res = await buildApprovalTx(
-      "5",
-      address,
-      REACT_APP_HYDRA_BRIDGE_CONTRACT!,
-      "0x98339D8C260052B7ad81c28c16C0b98420f2B46a",
-      "1000000",
-      "0"
-    );
-    console.log(res.data);
-    setBuildApproveTx(res.data);
+  const onBuildApproveTxData = async (
+    chainId: string,
+    tokenAddress: string,
+    amount: string,
+    routeId: RouteId
+  ) => {
+    try {
+      const { address } = onBoard?.getState()!;
+      if (isAllowed) {
+        const res = await buildApprovalTx(
+          chainId,
+          address,
+          REACT_APP_HYDRA_BRIDGE_CONTRACT!,
+          tokenAddress,
+          amount,
+          getRouteFromId(routeId)!
+        );
+        setBuildApproveTx(res.data);
+      }
+    } catch (e) {
+      console.log(e);
+      setIsError(e);
+    }
   };
 
-  const approveWallet = async () => {
-    const signer = provider.getUncheckedSigner();
-
-    signer
-      .sendTransaction(buildApproveTx)
-      .then((tx: any) => console.log(tx.hash));
+  const onApproveWallet = async () => {
+    try {
+      const signer = provider.getUncheckedSigner();
+      const res = await signer.sendTransaction(buildApproveTx);
+      setApproveTxHash(res.hash);
+    } catch (e) {
+      setIsError(e);
+      console.log(e);
+    }
   };
 
   const getBridgeTxData = async () => {
-    const { address } = onboard?.getState()!;
-    const res = await buildBridgeTx(
-      address,
-      Asset.Usdc,
-      ChainId.Mainnet,
-      Asset.Usdc,
-      ChainId.Polygon,
-      "1000000",
-      RouteId.Hop
-    );
-    console.log(res.data);
-    setBridgeTx(res.data);
+    try {
+      const { address } = onBoard?.getState()!;
+      const res = await buildBridgeTx(
+        address,
+        Asset.Usdc,
+        ChainId.Mainnet,
+        Asset.Usdc,
+        ChainId.Polygon,
+        "1000000",
+        RouteId.Hop
+      );
+      setBridgeTx(res.data);
+    } catch (e) {
+      console.log(e);
+      setIsError(e);
+    }
   };
 
-  const bridgeAsset = async () => {
-    const signer = provider.getUncheckedSigner();
-    const { data, to, from } = brideTx;
-    signer
-      .sendTransaction({ data, to, from })
-      .then((tx: any) => console.log(tx.hash));
+  const onMoveAssets = async () => {
+    try {
+      const signer = provider.getUncheckedSigner();
+      const { data, to, from } = brideTx;
+      const res = await signer.sendTransaction({ data, to, from });
+      setMoveTxHash(res.hash);
+    } catch (e) {
+      console.log(e);
+      setIsError(e);
+    }
   };
 
   return {
-    handleWalletConnect,
-    checkApprove,
-    getApproveTxData,
-    approveWallet,
+    onConnectWallet,
+    onCheckAllowance,
+    onBuildApproveTxData,
+    onApproveWallet,
     getBridgeTxData,
-    bridgeAsset,
+    onMoveAssets,
+    isConnected,
+    isApproved,
+    isAllowed,
+    setIsAllowed,
+    approveTxHash,
+    buildApproveTx,
+    moveTxHash,
+    isError,
   };
 }
-

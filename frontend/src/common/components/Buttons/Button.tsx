@@ -23,7 +23,7 @@ interface IStyledLabelProps {
 
 const StyledButton = styled.button<IStyledButtonProps>`
   background: ${({ theme, $background }) => $background};
-  border-radius: ${({ theme }) => theme.borderRadius.sm};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
   height: ${({ $height }) => $height || "40px"};
   ${getFlexCenter};
   cursor: pointer;

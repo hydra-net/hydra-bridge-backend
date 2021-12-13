@@ -1,15 +1,16 @@
-import styled from "styled-components";
+import styled, { CSSProperties } from "styled-components";
 import { getHorizontalGap, getVerticalGap } from "../../styles";
 import Select from "react-select";
 import Icon from "../Icon/Icon";
-import IconOption from "./IconOption";
-import ValueOption from "./ValueOption";
+import IconOption from "../Select/IconOption";
+import ValueOption from "../Select/ValueOption";
+import { ChainId } from "../../enums";
 
 const Root = styled.div`
   display: flex;
   justify-content: space-between;
   ${getHorizontalGap("20px")};
-  padding: 10px;
+  padding: 10px 10px 15px 10px;
 `;
 
 const TransferChainContainer = styled.div`
@@ -24,9 +25,9 @@ const StyledSelect = styled(Select)`
 `;
 
 const TransferLabel = styled.div`
-font-weight: 700;
-font-size: ${({ theme }) => theme.heading.md}
-color: ${({ theme }) => theme.secondaryColor};
+  font-weight: 700;
+  font-size: ${({ theme }) => theme.paragraph.lg};
+  color: ${({ theme }) => theme.secondaryColor};
 `;
 
 const TransferArrowContainer = styled.div`
@@ -40,40 +41,58 @@ const IconArrowRight = styled(Icon)`
   width: 25px;
 `;
 
+const customStyles: any = {
+  control: (provided: CSSProperties, state: any) => ({
+    ...provided,
+    borderRadius: "10px",
+  }),
+};
+
 type Props = {
-  chainFrom: string;
-  chainTo: string;
+  chainFrom: ChainId;
+  chainTo: ChainId;
   onSelectChainFrom: (option: any) => void;
   onSelectChainTo: (option: any) => void;
 };
 const TransferChainSelects = ({
+  chainFrom,
+  chainTo,
   onSelectChainFrom,
   onSelectChainTo,
 }: Props) => {
   const chainsFrom = [
     {
       label: "Ethereum",
-      value: "0",
-      icon: <Icon name="ethereum" size="20px"/>,
+      value: ChainId.Mainnet,
+      icon: <Icon name="ethereum" size="20px" />,
     },
     {
       label: "Polygon",
-      value: "1",
-      icon: <Icon name="polygon" size="20px"/>,
+      value: ChainId.Polygon,
+      icon: <Icon name="polygon" size="20px" />,
     },
   ];
   const chainsTo = [
-    { label: "Ethereum", value: "0", icon: <Icon name="ethereum" size="20px"/> },
-    { label: "Polygon", value: "1", icon: <Icon name="polygon" size="20px"/> },
+    // {
+    //   label: "Ethereum",
+    //   value: "0",
+    //   icon: <Icon name="ethereum" size="20px" />,
+    // },
+    {
+      label: "Polygon",
+      value: ChainId.Polygon,
+      icon: <Icon name="polygon" size="20px" />,
+    },
   ];
-
+  console.log(chainFrom, chainTo);
   return (
     <Root>
       <TransferChainContainer>
         <TransferLabel>Transfer from</TransferLabel>
         <StyledSelect
+          value={chainsFrom.find((option) => option.value === chainFrom) || null}
+          styles={customStyles}
           options={chainsFrom}
-          isClearable
           placeholder={null}
           onChange={onSelectChainFrom}
           components={{ Option: IconOption, SingleValue: ValueOption }}
@@ -85,11 +104,12 @@ const TransferChainSelects = ({
       <TransferChainContainer>
         <TransferLabel>Transfer to</TransferLabel>
         <StyledSelect
+          value={chainsTo.find((option) => option.value === chainTo) || null}
+          styles={customStyles}
           options={chainsTo}
           placeholder={null}
-          isClearable
           onChange={onSelectChainTo}
-          components={{ Option: IconOption, SingleValue: ValueOption  }}
+          components={{ Option: IconOption, SingleValue: ValueOption }}
         />
       </TransferChainContainer>
     </Root>

@@ -35,7 +35,9 @@ declare module "styled-components" {
     inputBorderColor: string,
     lightBackgroundColor: string,
     greyColor: string
-    buttonDefaultColor: string
+    buttonDefaultColor: string,
+    greenColor: string
+    blueColor: string;
   }
 }
 
@@ -73,5 +75,7 @@ export const defaultTheme: DefaultTheme = {
   inputBorderColor: "rgba(255, 255, 255, 0.3)",
   lightBackgroundColor: "#2d2d2d",
   greyColor: "#a1a1a1",
-  buttonDefaultColor: "rgba(0,0,0,0.2)"
+  buttonDefaultColor: "rgba(0,0,0,0.2)",
+  greenColor: "#37b514",
+  blueColor: "#1976d2"
 };
