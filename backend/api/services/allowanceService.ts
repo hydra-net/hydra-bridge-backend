@@ -7,8 +7,8 @@ import { getProvider } from "../helpers/web3";
 import { ethers } from "ethers";
 import { erc20Abi } from "../common/abis/erc20Abi";
 import { Interface } from "@ethersproject/abi";
+import { ChainId } from "../common/enums";
 require("dotenv").config();
-const { ETH_CHAIN_ID } = process.env;
 
 const ERC20_INTERFACE = new Interface([
   {
@@ -32,7 +32,7 @@ export const getAllowance = async (dto: CheckAllowanceDto) => {
       tokenAddress: dto.tokenAddress,
     };
     if (dto.chainId && dto.owner && dto.spender && dto.tokenAddress) {
-      if (dto.chainId === ETH_CHAIN_ID) {
+      if (ChainId[dto.chainId.toString()] === ChainId.goerli) {
         const rootToken = new ethers.Contract(
           dto.tokenAddress,
           erc20Abi,
@@ -67,7 +67,7 @@ export const buildTx = async (
       dto.tokenAddress &&
       dto.amount
     ) {
-      if (dto.chainId === ETH_CHAIN_ID) {
+      if (ChainId[dto.chainId] === ChainId.goerli) {
         const rootToken = new ethers.Contract(
           dto.tokenAddress,
           erc20Abi,

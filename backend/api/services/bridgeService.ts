@@ -1,4 +1,9 @@
-import { BuildTxRequestDto, BuildTxResponseDto } from "../common/dtos";
+import {
+  BuildTxRequestDto,
+  BuildTxResponseDto,
+  QuoteRequestDto,
+  QuoteResponseDto,
+} from "../common/dtos";
 import { Asset, BridgeId, ChainId, RouteId } from "../common/enums";
 import { encodeParameter } from "../helpers/web3";
 import { Interface } from "@ethersproject/abi";
@@ -13,16 +18,73 @@ const { ETH_CONTRACT, HOP_RELAYER, HOP_RELAYER_FEE } = process.env;
 
 const HYDRA_BRIDGE_INTERFACE = new Interface(hydraBridge);
 
+export const getQuote = async (
+  dto: QuoteRequestDto
+): Promise<QuoteResponseDto[]> => {
+  if (
+    dto.fromAsset &&
+    dto.fromChainId &&
+    dto.toAsset &&
+    dto.toChainId &&
+    dto.amount
+  ) {
+    if (
+      Asset[dto.fromAsset] === Asset[dto.toAsset] &&
+      ChainId[dto.fromChainId] !== ChainId[dto.toChainId]
+    ) {
+      const isApprovalRequired =
+        Asset[dto.fromAsset.toString()] !== Asset.eth ? true : false;
+      const polygonRoute: QuoteResponseDto = {
+        routeId: RouteId.polygon,
+        amountIn: dto.amount,
+        amountOut: dto.amount,
+        isApprovalRequired: isApprovalRequired,
+        allowanceTarget: getContractFromAsset(dto.fromAsset),
+        fromAsset: Asset[dto.fromAsset],
+        toAsset: Asset[dto.toAsset],
+        fromChainId: ChainId[dto.fromChainId],
+        toChainId: ChainId[dto.toChainId],
+      };
+      const hopRoute: QuoteResponseDto = {
+        routeId: RouteId.hop,
+        amountIn: dto.amount,
+        amountOut: dto.amount,
+        isApprovalRequired: isApprovalRequired,
+        allowanceTarget: getContractFromAsset(dto.fromAsset),
+        fromAsset: Asset[dto.fromAsset],
+        toAsset: Asset[dto.toAsset],
+        fromChainId: ChainId[dto.fromChainId],
+        toChainId: ChainId[dto.toChainId],
+      };
+      return [polygonRoute, hopRoute];
+    }
+  }
+  return [];
+};
+
 export const buildTx = async (
   dto: BuildTxRequestDto
 ): Promise<BuildTxResponseDto> => {
   try {
-    if (dto.routeId.toString() === RouteId.Polygon.toString()) {
-      return getPolygonRoute(dto);
-    }
+    if (
+      dto.fromAsset &&
+      dto.fromChainId &&
+      dto.toAsset &&
+      dto.toChainId &&
+      dto.amount
+    ) {
+      if (
+        Asset[dto.fromAsset] === Asset[dto.toAsset] &&
+        ChainId[dto.fromChainId] !== ChainId[dto.toChainId]
+      ) {
+        if (RouteId[dto.routeId] === RouteId.polygon) {
+          return getPolygonRoute(dto);
+        }
 
-    if (dto.routeId.toString() === RouteId.Hop.toString()) {
-      return getHopRoute(dto);
+        if (RouteId[dto.routeId] === RouteId.hop) {
+          return getHopRoute(dto);
+        }
+      }
     }
 
     return {
@@ -39,8 +101,8 @@ const getPolygonRoute = (dto: BuildTxRequestDto): BuildTxResponseDto => {
   const depositData = encodeParameter("uint256", dto.amount);
 
   if (
-    dto.fromAsset.toString() === Asset.Usdc.toString() &&
-    dto.toAsset.toString() === Asset.Usdc.toString() &&
+    Asset[dto.fromAsset] === Asset.usdc &&
+    Asset[dto.toAsset] === Asset.usdc &&
     depositData
   ) {
     const sendToPolygonData = HYDRA_BRIDGE_INTERFACE.encodeFunctionData(
@@ -57,14 +119,11 @@ const getPolygonRoute = (dto: BuildTxRequestDto): BuildTxResponseDto => {
       data: sendToPolygonData,
       to: ETH_CONTRACT,
       from: dto.recipient,
-      bridgeId: BridgeId.Polygon,
+      bridgeId: BridgeId.polygon,
     };
   }
 
-  if (
-    dto.fromAsset.toString() === Asset.Eth.toString() &&
-    dto.toAsset.toString() === Asset.Eth.toString()
-  ) {
+  if (Asset[dto.fromAsset] === Asset.eth && Asset[dto.toAsset] === Asset.eth) {
     const sendEthToPolygonData = HYDRA_BRIDGE_INTERFACE.encodeFunctionData(
       "sendEthToPolygon",
       [dto.recipient]
@@ -76,7 +135,7 @@ const getPolygonRoute = (dto: BuildTxRequestDto): BuildTxResponseDto => {
       value: ethers.utils
         .parseEther(ethers.utils.formatEther(dto.amount))
         .toHexString(),
-      bridgeId: BridgeId.Polygon,
+      bridgeId: BridgeId.polygon,
     };
   }
 
@@ -89,9 +148,10 @@ const getPolygonRoute = (dto: BuildTxRequestDto): BuildTxResponseDto => {
 
 const getHopRoute = (dto: BuildTxRequestDto): BuildTxResponseDto => {
   const depositData = encodeParameter("uint256", dto.amount);
+
   if (
-    dto.fromAsset.toString() === Asset.Usdc.toString() &&
-    dto.toAsset.toString() === Asset.Usdc.toString() &&
+    Asset[dto.fromAsset] === Asset.usdc &&
+    Asset[dto.toAsset] === Asset.usdc &&
     depositData
   ) {
     const sendToL2HopData = HYDRA_BRIDGE_INTERFACE.encodeFunctionData(
@@ -112,18 +172,23 @@ const getHopRoute = (dto: BuildTxRequestDto): BuildTxResponseDto => {
       data: sendToL2HopData,
       to: ETH_CONTRACT,
       from: dto.recipient,
-      bridgeId: BridgeId.Hop,
+      bridgeId: BridgeId.hop,
     };
   }
 
-  if (
-    dto.fromAsset.toString() === Asset.Eth.toString() &&
-    dto.toAsset.toString() === Asset.Eth.toString()
-  ) {
+  if (Asset[dto.fromAsset] === Asset.eth && Asset[dto.toAsset] === Asset.eth) {
     const sendToL2HopData = HYDRA_BRIDGE_INTERFACE.encodeFunctionData(
       "sendEthToL2Hop",
-      [dto.recipient, dto.toChainId, 0, Date.now() + 30, HOP_RELAYER, 0]
+      [
+        dto.recipient,
+        getChainFromId(dto.toChainId),
+        0,
+        Date.now() + 30,
+        HOP_RELAYER,
+        0,
+      ]
     );
+
     return {
       data: sendToL2HopData,
       to: ETH_CONTRACT,
@@ -131,7 +196,7 @@ const getHopRoute = (dto: BuildTxRequestDto): BuildTxResponseDto => {
       value: ethers.utils
         .parseEther(ethers.utils.formatEther(dto.amount))
         .toHexString(),
-      bridgeId: BridgeId.Hop,
+      bridgeId: BridgeId.hop,
     };
   }
 

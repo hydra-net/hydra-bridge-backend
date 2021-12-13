@@ -1,4 +1,4 @@
-import { Asset, BridgeId, ChainId, Route, RouteId } from "./enums";
+import { Asset, BridgeId, ChainId, RouteId } from "./enums";
 
 export interface CheckAllowanceDto {
   chainId: string;
@@ -23,21 +23,32 @@ export interface BuildAllowanceResponseDto {
 
 export interface BuildTxRequestDto {
   recipient: string;
-  fromAsset: Asset;
-  fromChainId: ChainId;
-  toAsset: Asset;
-  toChainId: ChainId;
+  fromAsset: string;
+  fromChainId: string;
+  toAsset: string;
+  toChainId: string;
   amount: string;
-  routeId: RouteId
+  routeId: string
 }
 
 export interface QuoteRequestDto {
-  recipient: string;
+  fromAsset: string;
+  fromChainId: string;
+  toAsset: string;
+  toChainId: string;
+  amount: string;
+}
+
+export interface QuoteResponseDto {
   fromAsset: Asset;
   fromChainId: ChainId;
   toAsset: Asset;
   toChainId: ChainId;
-  amount: string;
+  amountIn: string;
+  amountOut: string
+  allowanceTarget: string;
+  isApprovalRequired: boolean;
+  routeId: RouteId
 }
 
 export interface BuildTxResponseDto {

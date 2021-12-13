@@ -24,9 +24,9 @@ export const getSigner = () => {
 };
 
 export const encodeParameter = (
-  type: string,
+  type: string = "uint256",
   amount: string | number | undefined
 ) => {
   const web3 = new Web3(getProviderUrl());
-  return amount ? web3.eth.abi.encodeParameter("uint256", amount) : undefined;
+  return amount ? web3.eth.abi.encodeParameter(type, amount) : undefined;
 };

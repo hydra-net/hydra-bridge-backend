@@ -2,8 +2,8 @@ import { Asset } from "../common/enums";
 require("dotenv").config();
 const { USDC_GOERLI } = process.env;
 
-export const getContractFromAsset = (asset: Asset): string | undefined => {
-  if (asset.toString() === Asset.Usdc.toString()) {
+export const getContractFromAsset = (asset: string): string | undefined => {
+  if (Asset[asset] === Asset.usdc) {
     return USDC_GOERLI;
   }
   return undefined;

@@ -24,7 +24,12 @@
             "name": "chainId",
             "in": "query",
             "description": "Chain id to bridge",
-            "required": "true"
+            "required": "true",
+            "enum":
+            [
+              "goerli",
+              "polygonMumbai"
+            ]
           },
           {
             "name": "owner",
@@ -64,7 +69,12 @@
             "name": "chainId",
             "in": "query",
             "description": "Chain id to bridge",
-            "required": "true"
+            "required": "true",
+            "enum":
+            [
+              "goerli",
+              "polygonMumbai"
+            ]
           },
           {
             "name": "owner",
@@ -101,15 +111,153 @@
         }
       }
     },
-    "/build-tx": {
+    "/bridge/build-tx": {
       "get": {
         "tags": ["Bridge"],
         "summary": "Build transaction for bridging assets",
+        "parameters": [
+          {
+            "name": "recipient",
+            "in": "query",
+            "description": "Recipient of bridged assets",
+            "required": "true"
+          },
+          {
+            "name": "fromAsset",
+            "in": "query",
+            "description": "Asset from who we bridge",
+            "required": "true",
+            "enum":
+            [
+              "eth",
+              "usdc"
+            ]
+          },
+          {
+            "name": "fromChainId",
+            "in": "query",
+            "description": "Chain from who we bridge",
+            "required": "true",
+            "enum":
+            [
+              "goerli",
+              "polygonMumbai"
+            ]
+          },
+          {
+            "name": "toAsset",
+            "in": "query",
+            "description": "Asset to who we bridge",
+            "required": "true",
+            "enum":
+            [
+              "eth",
+              "usdc"
+            ]
+          },
+          {
+            "name": "toChainId",
+            "in": "query",
+            "description": "Chain to who we bridge",
+            "required": "true",
+            "enum":
+            [
+              "goerli",
+              "polygonMumbai"
+            ]
+          },
+          {
+            "name": "amount",
+            "in": "query",
+            "description": "Amount to transfer",
+            "required": "true"
+          },
+          {
+            "name": "routeId",
+            "in": "query",
+            "description": "ID of transfer route",
+            "required": "true",
+            "enum":
+            [
+              "polygon",
+              "hop"
+            ]
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
             "schema": {
-              "$ref": "#/definitions/BuildTxRequestDto"
+              "$ref": "#/definitions/BuildTxResponseDto"
+            }
+          }
+        }
+      }
+    },
+    "/bridge/quote": {
+      "get": {
+        "tags": ["Bridge"],
+        "summary": "Get quote for bridge routes",
+        "parameters": [
+          {
+            "name": "fromAsset",
+            "in": "query",
+            "description": "Asset from who we bridge",
+            "required": "true",
+            "enum":
+            [
+              "eth",
+              "usdc"
+            ]
+          },
+          {
+            "name": "fromChainId",
+            "in": "query",
+            "description": "Chain from who we bridge",
+            "required": "true",
+            "enum":
+            [
+              "goerli",
+              "polygonMumbai"
+            ]
+          },
+          {
+            "name": "toAsset",
+            "in": "query",
+            "description": "Asset to who we bridge",
+            "required": "true",
+            "enum":
+            [
+              "eth",
+              "usdc"
+            ]
+          },
+          {
+            "name": "toChainId",
+            "in": "query",
+            "description": "Chain to who we bridge",
+            "required": "true",
+            "enum":
+            [
+              "goerli",
+              "polygonMumbai"
+            ]
+          },
+          {
+            "name": "amount",
+            "in": "query",
+            "description": "Amount to transfer",
+            "required": "true"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/QuotesDto"
+              }
             }
           }
         }
@@ -188,6 +336,88 @@
           "type": "string"
         }
       }
+    },
+
+    "BuildTxResponseDto": {
+      "properties": {
+        "data": {
+          "type": "string"
+        },
+        "to": {
+          "type": "string"
+        },
+        "from": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        },
+        "bridgeId": {
+          "type": "string"
+        }
+      }
+    },
+    "QuoteRequestDto": {
+      "required": [
+        "fromAsset",
+        "fromChainId",
+        "toAsset",
+        "toChainId",
+        "amount"
+      ],
+      "properties": {
+        "fromAsset": {
+          "type": "string"
+        },
+        "fromChainId": {
+          "type": "string"
+        },
+        "toAsset": {
+          "type": "string"
+        },
+        "toChainId": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "string"
+        }
+      }
+    },
+
+    "QuoteResponseDto": {
+      "properties": {
+        "fromAsset": {
+          "type": "string"
+        },
+        "fromChainId": {
+          "type": "string"
+        },
+        "toAsset": {
+          "type": "string"
+        },
+        "toChainId": {
+          "type": "string"
+        },
+        "amountIn": {
+          "type": "string"
+        },
+        "amountOut": {
+          "type": "string"
+        },
+        "allowanceTarget": {
+          "type": "string"
+        },
+        "isApproveRequired": {
+          "type": "boolean"
+        },
+        "routeId": {
+          "type": "string"
+        }
+      }
+    },
+    "QuotesDto": {
+      "type": "array",
+      "$ref": "#/definitions/QuoteResponseDto"
     }
   },
 
