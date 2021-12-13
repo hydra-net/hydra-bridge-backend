@@ -1,24 +1,21 @@
-export enum Route {
-    Polygon,
-    Hop
-}
-
 export enum Asset {
-    Eth,
-    Usdc
+    eth,
+    usdc
 }
 
 export enum ChainId {
-    Mainnet,
-    Polygon
+    mainnet,
+    polygon,
+    goerli = 5,
+    polygoMumbai= 80001
 }
 
 export enum BridgeId {
-    Polygon,
-    Hop
+    polygon,
+    hop
 }
 
 export enum RouteId {
-    Polygon,
-    Hop
+    polygon,
+    hop
 }

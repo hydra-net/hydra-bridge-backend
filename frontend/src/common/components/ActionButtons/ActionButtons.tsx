@@ -11,18 +11,28 @@ type Props = {
   isConnected?: boolean;
   isApproved?: boolean;
   isAllowed?: boolean;
+  isEth?: boolean
+  isRouteIdSelected?: boolean;
+  amountIn?: number;
   onWalletConnect: () => void;
   onWalletApprove: () => void;
   onMoveAssets: () => void;
 };
 
 const ActionButtons = ({
+  isEth,
+  isRouteIdSelected,
+  amountIn,
   isConnected,
   isApproved,
   onWalletConnect,
   onWalletApprove,
 }: Props) => {
   const theme = useTheme();
+
+  const showSelectRoute = isConnected && !isRouteIdSelected;
+  const showApprove = isConnected && amountIn && isRouteIdSelected && !isApproved && !isEth;
+  const showMoveAssets = isConnected && (isApproved || isEth) && isRouteIdSelected;
 
   return (
     <Root>
@@ -35,7 +45,16 @@ const ActionButtons = ({
           text={"Connect wallet"}
         />
       )}
-      {isConnected && !isApproved && (
+      {showSelectRoute && (
+        <Button
+          background={theme.buttonDefaultColor}
+          fontWeight={"700"}
+          onClick={onWalletApprove}
+          width={"100%"}
+          text={"Select route"}
+        />
+      )}
+      {showApprove && (
         <Button
           background={theme.greenColor}
           fontWeight={"700"}
@@ -45,13 +64,13 @@ const ActionButtons = ({
         />
       )}
 
-      {isConnected && isApproved && (
+      {showMoveAssets&& (
         <Button
           background={theme.blueColor}
           fontWeight={"700"}
           onClick={onWalletApprove}
           width={"100%"}
-          text={"Approve"}
+          text={"Move"}
         />
       )}
     </Root>

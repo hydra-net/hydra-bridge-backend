@@ -3,9 +3,10 @@ import { useEffect, useState } from "react";
 import { ethers } from "ethers";
 import { API } from "bnc-onboard/dist/src/interfaces";
 import { buildApprovalTx, checkAllowance } from "../../api/allowancesService";
-import { buildBridgeTx } from "../../api/bridgeService";
+import { buildBridgeTx, getQuote } from "../../api/bridgeService";
 import { Asset, ChainId, RouteId } from "../../common/enums";
 import { getRouteFromId } from "../../helpers/routeHelper";
+import { BuildTxRequestDto, QuoteRequestDto } from "../../common/dtos";
 require("dotenv").config();
 
 const {
@@ -24,6 +25,7 @@ export default function useHome() {
   const [onBoard, setOnboard] = useState<API | null>();
 
   //transaction actions
+  const [bridgeRoutes, setBridgeRoutes] = useState<any>();
   const [buildApproveTx, setBuildApproveTx] = useState<any>();
   const [brideTx, setBridgeTx] = useState<any>();
   const [approveTxHash, setApproveTxHash] = useState<string>();
@@ -64,7 +66,6 @@ export default function useHome() {
     });
 
     setOnboard(onboard);
-    console.log(onBoard);
   }, [wallet]);
 
   const onConnectWallet = async () => {
@@ -77,7 +78,7 @@ export default function useHome() {
   };
 
   const onCheckAllowance = async (
-    amountIn: string,
+    amountIn: number,
     chainId: string,
     tokenAddress: string
   ) => {
@@ -89,9 +90,19 @@ export default function useHome() {
         REACT_APP_HYDRA_BRIDGE_CONTRACT!,
         tokenAddress
       );
-      const amountToSpend = ethers.BigNumber.from(amountIn);
+      const amountToSpend = ethers.BigNumber.from(amountIn.toString());
       const amountAllowed = ethers.BigNumber.from(res.toString());
       setIsAllowed(amountToSpend.gte(amountAllowed));
+    } catch (e) {
+      console.log(e);
+      setIsError(e);
+    }
+  };
+
+  const onGetQuote = async (dto: QuoteRequestDto) => {
+    try {
+      const res = await getQuote(dto);
+      setBridgeRoutes(res.data);
     } catch (e) {
       console.log(e);
       setIsError(e);
@@ -102,7 +113,7 @@ export default function useHome() {
     chainId: string,
     tokenAddress: string,
     amount: string,
-    routeId: RouteId
+    routeId: string
   ) => {
     try {
       const { address } = onBoard?.getState()!;
@@ -134,18 +145,11 @@ export default function useHome() {
     }
   };
 
-  const getBridgeTxData = async () => {
+  const getBridgeTxData = async (dto: BuildTxRequestDto) => {
     try {
       const { address } = onBoard?.getState()!;
-      const res = await buildBridgeTx(
-        address,
-        Asset.Usdc,
-        ChainId.Mainnet,
-        Asset.Usdc,
-        ChainId.Polygon,
-        "1000000",
-        RouteId.Hop
-      );
+      dto.recipient = address;
+      const res = await buildBridgeTx(dto);
       setBridgeTx(res.data);
     } catch (e) {
       console.log(e);
@@ -167,6 +171,7 @@ export default function useHome() {
 
   return {
     onConnectWallet,
+    onGetQuote,
     onCheckAllowance,
     onBuildApproveTxData,
     onApproveWallet,
@@ -179,6 +184,7 @@ export default function useHome() {
     approveTxHash,
     buildApproveTx,
     moveTxHash,
+    bridgeRoutes,
     isError,
   };
 }

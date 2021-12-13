@@ -7,7 +7,7 @@ export const icons = {
   arrowRight,
   ethereum,
   polygon,
-  usdc
+  usdc,
 };
 
 export default icons;

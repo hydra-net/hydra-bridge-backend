@@ -49,8 +49,8 @@ const customStyles: any = {
 };
 
 type Props = {
-  chainFrom: ChainId;
-  chainTo: ChainId;
+  chainFrom: number;
+  chainTo: number;
   onSelectChainFrom: (option: any) => void;
   onSelectChainTo: (option: any) => void;
 };
@@ -62,13 +62,13 @@ const TransferChainSelects = ({
 }: Props) => {
   const chainsFrom = [
     {
-      label: "Ethereum",
-      value: ChainId.Mainnet,
+      label: "Goerli",
+      value: 5,
       icon: <Icon name="ethereum" size="20px" />,
     },
     {
-      label: "Polygon",
-      value: ChainId.Polygon,
+      label: "Polygon mumbai",
+      value: 80001,
       icon: <Icon name="polygon" size="20px" />,
     },
   ];
@@ -79,12 +79,12 @@ const TransferChainSelects = ({
     //   icon: <Icon name="ethereum" size="20px" />,
     // },
     {
-      label: "Polygon",
-      value: ChainId.Polygon,
+      label: "Polygon mumbai",
+      value: 80001,
       icon: <Icon name="polygon" size="20px" />,
     },
   ];
-  console.log(chainFrom, chainTo);
+
   return (
     <Root>
       <TransferChainContainer>

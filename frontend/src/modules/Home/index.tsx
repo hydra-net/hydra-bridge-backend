@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import styled, { useTheme } from "styled-components";
 import ActionButtons from "../../common/components/ActionButtons/ActionButtons";
 import AssetSelect from "../../common/components/AssetSelect";
+import BridgeRoutes from "../../common/components/BridgeRoutes";
 import AmountInput from "../../common/components/Input";
 import TransferChainSelects from "../../common/components/TransferChain/TransferChainSelects";
-import { Asset, ChainId, RouteId } from "../../common/enums";
+import { Asset } from "../../common/enums";
 import {
   getFlexCenter,
   getFlexStart,
@@ -12,6 +13,7 @@ import {
 } from "../../common/styles";
 import { getContractFromAsset } from "../../helpers/assetHelper";
 import { getChainFromId } from "../../helpers/chainHelper";
+import { routes } from "../../routes";
 import useHome from "./useHome";
 
 const Root = styled.div``;
@@ -27,7 +29,7 @@ const Title = styled.div`
 `;
 const Wrapper = styled.div`
   margin: 0 auto;
-  max-width: 480px;
+  max-width: 520px;
   width: 100%;
   margin-top: 3rem;
   padding: 10px;
@@ -60,12 +62,12 @@ const AmountsContainer = styled.div`
 `;
 
 const Home = () => {
-  const [chainFrom, setChainFrom] = useState<ChainId>();
-  const [chainTo, setChainTo] = useState<ChainId>();
-  const [asset, setAsset] = useState<Asset>();
+  const [chainFrom, setChainFrom] = useState<number>();
+  const [chainTo, setChainTo] = useState<number>();
+  const [asset, setAsset] = useState<number>();
   const [amountIn, setAmountIn] = useState<number>();
   const [amountOut, setAmountOut] = useState<number>();
-  const [routeId, setRouteId] = useState<RouteId>();
+  const [routeId, setRouteId] = useState<string>();
   const theme = useTheme();
   const {
     onConnectWallet,
@@ -73,11 +75,13 @@ const Home = () => {
     onBuildApproveTxData,
     onApproveWallet,
     getBridgeTxData,
+    onGetQuote,
     onMoveAssets,
     isConnected,
     isApproved,
     setIsAllowed,
     isAllowed,
+    bridgeRoutes,
     approveTxHash,
     buildApproveTx,
     moveTxHash,
@@ -87,14 +91,54 @@ const Home = () => {
   useEffect(() => {
     async function checkAllowance() {
       await onCheckAllowance(
-        amountIn?.toString()!,
+        amountIn!,
         getChainFromId(chainFrom!)!,
         getContractFromAsset(asset!)!
       );
     }
 
-    checkAllowance();
-  }, [setAmountIn]);
+    if (
+      isConnected &&
+      amountIn &&
+      chainFrom &&
+      asset?.toString() === Asset.usdc.toString()
+    ) {
+      checkAllowance();
+    }
+  }, [isConnected, asset!]);
+
+  useEffect(() => {
+    async function getBridgesQuote() {
+      await onGetQuote({
+        fromAsset: asset!,
+        fromChainId: chainFrom!,
+        toAsset: asset!,
+        toChainId: chainTo!,
+        amount: amountIn!,
+      });
+    }
+    if (asset && chainFrom && chainTo && amountIn) {
+      getBridgesQuote();
+    }
+  }, [asset, chainFrom, chainTo, amountIn]);
+
+  useEffect(() => {
+    async function checkAllowance() {
+      await onCheckAllowance(
+        amountIn!,
+        getChainFromId(chainFrom!)!,
+        getContractFromAsset(asset!)!
+      );
+    }
+    if (
+      isConnected &&
+      amountIn &&
+      chainFrom &&
+      Asset[asset!] === Asset.usdc.toString()
+    ) {
+      checkAllowance();
+    }
+  }, [isConnected, asset]);
 
   useEffect(() => {
     async function getApproveTxData() {
@@ -105,7 +149,9 @@ const Home = () => {
         routeId!
       );
     }
-    getApproveTxData();
+    if (isConnected && amountIn && chainFrom && asset) {
+      getApproveTxData();
+    }
   }, [setIsAllowed]);
 
   const handleSelectChainFrom = (option: any) => {
@@ -121,6 +167,7 @@ const Home = () => {
   };
 
   const handleSelectAsset = (option: any) => {
+    console.log(option.value);
     setAsset(option ? option.value : null);
   };
 
@@ -130,6 +177,11 @@ const Home = () => {
       setAmountIn(value);
       setAmountOut(value);
     }
+  };
+
+  const handleOnRouteClick = (id: string) => {
+    console.log("tu sam", id);
+    setRouteId(id);
   };
 
   return (
@@ -151,13 +203,13 @@ const Home = () => {
             />
             <AmountsContainer>
               <AmountInput
-                amount={amountIn}
+                amount={amountIn && amountIn}
                 min={0}
                 label={"Send"}
                 onChange={handleAmountInChange}
               />
               <AmountInput
-                amount={amountOut}
+                amount={amountOut && amountOut}
                 step={0.01}
                 placeholder={"0.0"}
                 label={"Receive"}
@@ -168,12 +220,20 @@ const Home = () => {
               isConnected={isConnected}
               isApproved={isApproved}
               isAllowed={isAllowed}
+              isRouteIdSelected={parseInt(routeId!) >= 0}
+              isEth={!!asset && asset?.toString() === Asset.eth.toString()}
+              amountIn={amountIn}
               onWalletConnect={onConnectWallet}
               onWalletApprove={onApproveWallet}
               onMoveAssets={onMoveAssets}
             />
           </Container>
         </TransferWrapper>
+        <BridgeRoutes
+          selectedRouteId={routeId}
+          routes={bridgeRoutes}
+          onClick={handleOnRouteClick}
+        />
       </Wrapper>
     </Root>
   );
