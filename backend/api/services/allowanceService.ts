@@ -4,11 +4,15 @@ import {
   CheckAllowanceDto,
 } from "../common/dtos";
 import { getProvider } from "../helpers/web3";
-import { ethers } from "ethers";
+import { BigNumber, ethers } from "ethers";
 import { erc20Abi } from "../common/abis/erc20Abi";
 import { Interface } from "@ethersproject/abi";
-import { ChainId } from "../common/enums";
+import { Asset, ChainId } from "../common/enums";
+import { parseUnits } from "ethers/lib/utils";
+import { isNotEmpty } from "../helpers/stringHelper";
 require("dotenv").config();
+
+const { USDC_GOERLI } = process.env;
 
 const ERC20_INTERFACE = new Interface([
   {
@@ -31,8 +35,9 @@ export const getAllowance = async (dto: CheckAllowanceDto) => {
       value: 0,
       tokenAddress: dto.tokenAddress,
     };
-    if (dto.chainId && dto.owner && dto.spender && dto.tokenAddress) {
-      if (ChainId[dto.chainId.toString()] === ChainId.goerli) {
+    if (isNotEmpty(dto.chainId) && isNotEmpty(dto.owner) && isNotEmpty(dto.spender) && isNotEmpty(dto.tokenAddress)) {
+    
+      if (dto.chainId === ChainId.goerli.toString()) {
         const rootToken = new ethers.Contract(
           dto.tokenAddress,
           erc20Abi,
@@ -60,14 +65,16 @@ export const buildTx = async (
       to: "",
       from: "",
     };
+
     if (
-      dto.chainId &&
-      dto.owner &&
-      dto.spender &&
-      dto.tokenAddress &&
-      dto.amount
+      isNotEmpty(dto.chainId) &&
+      isNotEmpty(dto.owner) &&
+      isNotEmpty(dto.spender) &&
+      isNotEmpty(dto.tokenAddress) &&
+      isNotEmpty(dto.amount)
     ) {
-      if (ChainId[dto.chainId] === ChainId.goerli) {
+    
+      if (dto.chainId === ChainId.goerli.toString()) {
         const rootToken = new ethers.Contract(
           dto.tokenAddress,
           erc20Abi,
@@ -78,7 +85,10 @@ export const buildTx = async (
           dto.owner,
           dto.spender
         );
-        const amountToSpend = ethers.BigNumber.from(dto.amount);
+  
+        const units = dto.tokenAddress === USDC_GOERLI ? 6 : 18;
+        const parsedAmount = parseUnits(dto.amount, units);
+        const amountToSpend = ethers.BigNumber.from(parsedAmount.toString());
         const amountAllowed = ethers.BigNumber.from(allwanceRes.toString());
         if (amountToSpend.gt(amountAllowed)) {
           const approveData = ERC20_INTERFACE.encodeFunctionData("approve", [
@@ -96,7 +106,7 @@ export const buildTx = async (
 
     return response;
   } catch (e) {
-    console.log(e);
+    console.log("Allowance error", e);
     return e;
   }
 };

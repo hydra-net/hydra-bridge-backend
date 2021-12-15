@@ -3,7 +3,7 @@ require("dotenv").config();
 const { USDC_GOERLI } = process.env;
 
 export const getContractFromAsset = (asset: string): string | undefined => {
-  if (Asset[asset] === Asset.usdc) {
+  if (asset === Asset.usdc.toString()) {
     return USDC_GOERLI;
   }
   return undefined;
