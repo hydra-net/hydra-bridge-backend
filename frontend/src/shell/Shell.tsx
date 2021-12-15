@@ -6,7 +6,7 @@ import { lazyWithPreload } from "../helpers/lazy";
 import { routes } from "../routes";
 
 const Home = lazyWithPreload(
-  () => import(/* webpackChunkName: 'LandingModule' */ "../modules/Home/index")
+  () => import(/* webpackChunkName: 'LandingModule' */ "../modules/Home/Home")
 );
 
 const Shell = () => {

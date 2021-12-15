@@ -38,6 +38,7 @@ declare module "styled-components" {
     buttonDefaultColor: string,
     greenColor: string
     blueColor: string;
+    redColor: string;
   }
 }
 
@@ -77,5 +78,6 @@ export const defaultTheme: DefaultTheme = {
   greyColor: "#a1a1a1",
   buttonDefaultColor: "rgba(0,0,0,0.2)",
   greenColor: "#37b514",
-  blueColor: "#1976d2"
+  blueColor: "#1976d2",
+  redColor: "#d32f2f"
 };

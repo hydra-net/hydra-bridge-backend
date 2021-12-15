@@ -32,9 +32,10 @@ const StyledSelect = styled(Select)`
 `;
 
 type Props = {
+  isDisabled: boolean
   onSelectAsset: (value: any) => void;
 };
-const AssetSelect = ({ onSelectAsset }: Props) => {
+const AssetSelect = ({ isDisabled, onSelectAsset }: Props) => {
   const customStyles: any = {
     control: (provided: CSSProperties, state: any) => ({
       ...provided,
@@ -64,6 +65,7 @@ const AssetSelect = ({ onSelectAsset }: Props) => {
           placeholder={null}
           onChange={onSelectAsset}
           components={{ Option: IconOption, SingleValue: ValueOption }}
+          isDisabled={isDisabled}
         />
       </Container>
     </Root>

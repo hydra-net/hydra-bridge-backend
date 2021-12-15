@@ -1,6 +1,6 @@
 import styled, { useTheme } from "styled-components";
 import { QuoteResponseDto } from "../../dtos";
-import { RouteId } from "../../enums";
+import { Asset, RouteId } from "../../enums";
 import {
   getFlexCenter,
   getFlexStart,
@@ -91,15 +91,15 @@ const BridgeNameStyled = styled.div`
 
 type Props = {
   routes: QuoteResponseDto[];
-  selectedRouteId?: string;
-  onClick: (routeId: string) => void;
+  selectedRouteId?: number;
+  onClick: (routeId: number) => void;
 };
 const BridgeRoutes = ({ routes, selectedRouteId, onClick }: Props) => {
   const theme = useTheme();
   if (!routes) {
     return null;
   }
- 
+
   return (
     <Root>
       <TitleContainer>
@@ -107,17 +107,25 @@ const BridgeRoutes = ({ routes, selectedRouteId, onClick }: Props) => {
       </TitleContainer>
       <Container>
         {routes.map((route: QuoteResponseDto) => {
-          const isSelected = selectedRouteId === route.routeId;
+          const isSelected =
+            selectedRouteId?.toString() === route.routeId.toString();
+
           return (
             <Route
               key={route.routeId}
               isSelected={isSelected}
-              onClick={() => onClick(route.routeId)}
+              onClick={() => onClick(parseInt(route.routeId))}
             >
               <RouteContent>
                 <AmountContainer>
                   <div>
-                    <Icon name="usdc" />
+                    <Icon
+                      name={
+                        route.fromAsset === Asset[Asset.usdc]
+                          ? "usdc"
+                          : "ethereum"
+                      }
+                    />
                   </div>
                   <AmountStyled>{route.amountIn}</AmountStyled>
                 </AmountContainer>
@@ -141,7 +149,13 @@ const BridgeRoutes = ({ routes, selectedRouteId, onClick }: Props) => {
                 <Icon name="arrowRight" />
                 <AmountContainer>
                   <div>
-                    <Icon name="usdc" />
+                    <Icon
+                      name={
+                        route.fromAsset === Asset[Asset.usdc]
+                          ? "usdc"
+                          : "ethereum"
+                      }
+                    />
                   </div>
                   <AmountStyled isSelected={isSelected}>
                     {route.amountOut}

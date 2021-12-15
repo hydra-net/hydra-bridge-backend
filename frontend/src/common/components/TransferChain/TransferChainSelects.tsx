@@ -4,7 +4,6 @@ import Select from "react-select";
 import Icon from "../Icon/Icon";
 import IconOption from "../Select/IconOption";
 import ValueOption from "../Select/ValueOption";
-import { ChainId } from "../../enums";
 
 const Root = styled.div`
   display: flex;
@@ -51,12 +50,14 @@ const customStyles: any = {
 type Props = {
   chainFrom: number;
   chainTo: number;
+  isDisabled: boolean;
   onSelectChainFrom: (option: any) => void;
   onSelectChainTo: (option: any) => void;
 };
 const TransferChainSelects = ({
   chainFrom,
   chainTo,
+  isDisabled,
   onSelectChainFrom,
   onSelectChainTo,
 }: Props) => {
@@ -66,11 +67,11 @@ const TransferChainSelects = ({
       value: 5,
       icon: <Icon name="ethereum" size="20px" />,
     },
-    {
-      label: "Polygon mumbai",
-      value: 80001,
-      icon: <Icon name="polygon" size="20px" />,
-    },
+    // {
+    //   label: "Polygon mumbai",
+    //   value: 80001,
+    //   icon: <Icon name="polygon" size="20px" />,
+    // },
   ];
   const chainsTo = [
     // {
@@ -96,6 +97,7 @@ const TransferChainSelects = ({
           placeholder={null}
           onChange={onSelectChainFrom}
           components={{ Option: IconOption, SingleValue: ValueOption }}
+          isDisabled={isDisabled}
         />
       </TransferChainContainer>
       <TransferArrowContainer>
@@ -110,6 +112,7 @@ const TransferChainSelects = ({
           placeholder={null}
           onChange={onSelectChainTo}
           components={{ Option: IconOption, SingleValue: ValueOption }}
+          isDisabled={isDisabled}
         />
       </TransferChainContainer>
     </Root>

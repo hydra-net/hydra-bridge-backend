@@ -23,12 +23,12 @@ export interface BuildAllowanceResponseDto {
 
 export interface BuildTxRequestDto {
   recipient: string;
-  fromAsset: string;
-  fromChainId: string;
-  toAsset: string;
-  toChainId: string;
-  amount: string;
-  routeId: string
+  fromAsset: number;
+  fromChainId: number;
+  toAsset: number;
+  toChainId: number;
+  amount: number;
+  routeId: number
 }
 
 export interface QuoteRequestDto {

@@ -10,10 +10,10 @@ const Root = styled.div`
 type Props = {
   isConnected?: boolean;
   isApproved?: boolean;
-  isAllowed?: boolean;
   isEth?: boolean
   isRouteIdSelected?: boolean;
-  amountIn?: number;
+  amountIn?: boolean;
+  inProgress: boolean;
   onWalletConnect: () => void;
   onWalletApprove: () => void;
   onMoveAssets: () => void;
@@ -25,11 +25,12 @@ const ActionButtons = ({
   amountIn,
   isConnected,
   isApproved,
+  inProgress,
   onWalletConnect,
   onWalletApprove,
+  onMoveAssets
 }: Props) => {
   const theme = useTheme();
-
   const showSelectRoute = isConnected && !isRouteIdSelected;
   const showApprove = isConnected && amountIn && isRouteIdSelected && !isApproved && !isEth;
   const showMoveAssets = isConnected && (isApproved || isEth) && isRouteIdSelected;
@@ -43,15 +44,16 @@ const ActionButtons = ({
           onClick={onWalletConnect}
           width={"100%"}
           text={"Connect wallet"}
+          disabled={inProgress}
         />
       )}
       {showSelectRoute && (
         <Button
           background={theme.buttonDefaultColor}
           fontWeight={"700"}
-          onClick={onWalletApprove}
           width={"100%"}
           text={"Select route"}
+          disabled
         />
       )}
       {showApprove && (
@@ -61,16 +63,20 @@ const ActionButtons = ({
           onClick={onWalletApprove}
           width={"100%"}
           text={"Approve"}
+          disabled={inProgress}
+          isLoading={inProgress}
         />
       )}
 
-      {showMoveAssets&& (
+      {showMoveAssets && (
         <Button
           background={theme.blueColor}
           fontWeight={"700"}
-          onClick={onWalletApprove}
+          onClick={onMoveAssets}
           width={"100%"}
           text={"Move"}
+          isLoading={inProgress}
+          disabled={inProgress}
         />
       )}
     </Root>
