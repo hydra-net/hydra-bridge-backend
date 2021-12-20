@@ -1,0 +1,78 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Chain {
+  id                   Int              @id @default(autoincrement())
+  chainId              Int              @unique
+  created_at           DateTime         @default(now())
+  updated_at           DateTime         @updatedAt
+  name                 String           @db.VarChar(255)
+  is_l1                Boolean          @default(false)
+  is_testnet           Boolean          @default(false)
+  is_sending_enabled   Boolean          @default(false)
+  is_receiving_enabled Boolean          @default(false)
+  token                Token            @relation(fields: [token_id], references: [id])
+  token_id             Int
+  explorers            String[]         
+  tokens               ChainsOnTokens[]
+  routes_from          Route[]          @relation("chain_from")
+  routes_to            Route[]          @relation("chain_to")
+}
+
+model Token {
+  id         Int               @id @default(autoincrement())
+  created_at DateTime          @default(now())
+  updated_at DateTime          @updatedAt
+  name       String            @db.VarChar(255)
+  address    String            @db.VarChar(255)
+  decimals   Int
+  symbol     String            @db.VarChar(255)
+  chains     ChainsOnTokens[]
+  bridges    BridgesOnTokens[]
+  Chain      Chain[]
+}
+
+model ChainsOnTokens {
+  id         Int               @id @default(autoincrement())
+  chain    Chain @relation(fields: [chain_id], references: [id])
+  chain_id Int
+  token    Token @relation(fields: [token_id], references: [id])
+  token_id Int
+}
+
+model Bridge {
+  id           Int               @id @default(autoincrement())
+  created_at   DateTime          @default(now())
+  updated_at   DateTime          @updatedAt
+  name         String            @db.VarChar(255)
+  display_name String            @db.VarChar(255)
+  tokens       BridgesOnTokens[]
+}
+
+model BridgesOnTokens {
+  id        Int               @id @default(autoincrement())
+  bridge    Bridge @relation(fields: [bridge_id], references: [id])
+  bridge_id Int
+  token     Token  @relation(fields: [token_id], references: [id])
+  token_id  Int
+}
+
+model Route {
+  id            Int      @id @default(autoincrement())
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+  is_claimable  Boolean  @default(false)
+  chain_from    Chain    @relation("chain_from", fields: [chain_from_id], references: [id])
+  chain_from_id Int
+  chain_to      Chain    @relation("chain_to", fields: [chain_to_id], references: [id])
+  chain_to_id   Int
+}
