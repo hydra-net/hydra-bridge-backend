@@ -25,11 +25,7 @@
             "in": "query",
             "description": "Chain id to bridge",
             "required": "true",
-            "enum":
-            [
-              "goerli",
-              "polygonMumbai"
-            ]
+            "enum": ["goerli", "polygonMumbai"]
           },
           {
             "name": "owner",
@@ -70,11 +66,7 @@
             "in": "query",
             "description": "Chain id to bridge",
             "required": "true",
-            "enum":
-            [
-              "goerli",
-              "polygonMumbai"
-            ]
+            "enum": ["goerli", "polygonMumbai"]
           },
           {
             "name": "owner",
@@ -127,44 +119,28 @@
             "in": "query",
             "description": "Asset from who we bridge",
             "required": "true",
-            "enum":
-            [
-              "eth",
-              "usdc"
-            ]
+            "enum": ["eth", "usdc"]
           },
           {
             "name": "fromChainId",
             "in": "query",
             "description": "Chain from who we bridge",
             "required": "true",
-            "enum":
-            [
-              "goerli",
-              "polygonMumbai"
-            ]
+            "enum": ["goerli", "polygonMumbai"]
           },
           {
             "name": "toAsset",
             "in": "query",
             "description": "Asset to who we bridge",
             "required": "true",
-            "enum":
-            [
-              "eth",
-              "usdc"
-            ]
+            "enum": ["eth", "usdc"]
           },
           {
             "name": "toChainId",
             "in": "query",
             "description": "Chain to who we bridge",
             "required": "true",
-            "enum":
-            [
-              "goerli",
-              "polygonMumbai"
-            ]
+            "enum": ["goerli", "polygonMumbai"]
           },
           {
             "name": "amount",
@@ -177,11 +153,7 @@
             "in": "query",
             "description": "ID of transfer route",
             "required": "true",
-            "enum":
-            [
-              "polygon",
-              "hop"
-            ]
+            "enum": ["polygon", "hop"]
           }
         ],
         "responses": {
@@ -204,44 +176,28 @@
             "in": "query",
             "description": "Asset from who we bridge",
             "required": "true",
-            "enum":
-            [
-              "eth",
-              "usdc"
-            ]
+            "enum": ["eth", "usdc"]
           },
           {
             "name": "fromChainId",
             "in": "query",
             "description": "Chain from who we bridge",
             "required": "true",
-            "enum":
-            [
-              "goerli",
-              "polygonMumbai"
-            ]
+            "enum": ["goerli", "polygonMumbai"]
           },
           {
             "name": "toAsset",
             "in": "query",
             "description": "Asset to who we bridge",
             "required": "true",
-            "enum":
-            [
-              "eth",
-              "usdc"
-            ]
+            "enum": ["eth", "usdc"]
           },
           {
             "name": "toChainId",
             "in": "query",
             "description": "Chain to who we bridge",
             "required": "true",
-            "enum":
-            [
-              "goerli",
-              "polygonMumbai"
-            ]
+            "enum": ["goerli", "polygonMumbai"]
           },
           {
             "name": "amount",
@@ -258,6 +214,28 @@
               "items": {
                 "$ref": "#/definitions/QuotesDto"
               }
+            }
+          }
+        }
+      }
+    },
+    "/common/tokens": {
+      "get": {
+        "tags": ["Common"],
+        "summary": "Get tokens for transfering",
+        "parameters": [
+          {
+            "name": "chainId",
+            "in": "query",
+            "description": "Official chainId of chain we are transfering from",
+            "required": "true"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/TokensResponseDto"
             }
           }
         }
@@ -418,6 +396,39 @@
     "QuotesDto": {
       "type": "array",
       "$ref": "#/definitions/QuoteResponseDto"
+    },
+    "TokensResponseDto": {
+      "properties": {
+        "success": {
+          "type": "boolean"
+        },
+        "results": {
+          "type": "array",
+          "$ref": "#/definitions/TokenResponseDto"
+        }
+      }
+    },
+    "TokenResponseDto": {
+      "properties": {
+        "id": {
+          "type": "number"
+        },
+        "name": {
+          "type": "string"
+        },
+        "address": {
+          "type": "string"
+        },
+        "chainId": {
+          "type": "number"
+        },
+        "decimals": {
+          "type": "number"
+        },
+        "symbol": {
+          "type": "string"
+        }
+      }
     }
   },
 

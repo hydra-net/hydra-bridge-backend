@@ -1,5 +1,10 @@
 import { Asset, BridgeId, ChainId, RouteId } from "./enums";
 
+export interface BaseListResponseDto {
+  success: boolean;
+  results: any[];
+}
+
 export interface CheckAllowanceDto {
   chainId: string;
   owner: string;
@@ -28,7 +33,7 @@ export interface BuildTxRequestDto {
   toAsset: string;
   toChainId: string;
   amount: string;
-  routeId: string
+  routeId: string;
 }
 
 export interface QuoteRequestDto {
@@ -45,10 +50,10 @@ export interface QuoteResponseDto {
   toAsset: Asset;
   toChainId: ChainId;
   amountIn: string;
-  amountOut: string
+  amountOut: string;
   allowanceTarget: string;
   isApprovalRequired: boolean;
-  routeId: RouteId
+  routeId: RouteId;
 }
 
 export interface BuildTxResponseDto {
@@ -56,5 +61,17 @@ export interface BuildTxResponseDto {
   to: string;
   from: string;
   value?: any;
-  bridgeId?: BridgeId
+  bridgeId?: BridgeId;
+}
+
+export interface TokenResponseDto {
+  name: string;
+  address: string;
+  chainId: number;
+  decimals: number;
+  symbol: string;
+}
+
+export interface TokensResponseDto extends BaseListResponseDto {
+  results: TokenResponseDto[];
 }
