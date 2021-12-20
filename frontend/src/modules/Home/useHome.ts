@@ -4,8 +4,9 @@ import { ethers } from "ethers";
 import { API } from "bnc-onboard/dist/src/interfaces";
 import { buildApprovalTx, checkAllowance } from "../../api/allowancesService";
 import { buildBridgeTx, getQuote } from "../../api/bridgeService";
-import { BuildTxRequestDto, QuoteRequestDto } from "../../common/dtos";
+import { BuildTxRequestDto, QuoteRequestDto, TokenResponseDto } from "../../common/dtos";
 import { parseUnits } from "ethers/lib/utils";
+import { getBridgeTokens } from "../../api/commonService";
 require("dotenv").config();
 
 const {
@@ -39,6 +40,10 @@ export default function useHome() {
   const [isErrorOpen, setIsErrorOpen] = useState<boolean>(false);
   const [inProgress, setInProgress] = useState<boolean>(false);
 
+  //tokens
+  const [tokens, setTokens] = useState<TokenResponseDto[]>([]);
+  const [chainFrom, setChainFrom] = useState<number>(5);
+
   //modal
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
@@ -70,6 +75,16 @@ export default function useHome() {
 
     setOnboard(onboard);
   }, [wallet]);
+
+  useEffect(() => {
+    async function getTokens() {
+      setInProgress(true);
+      const result = await getBridgeTokens(chainFrom);
+      setTokens(result.data.results);
+      setInProgress(false);
+    }
+    getTokens();
+  },[chainFrom])
 
   const onConnectWallet = async () => {
     // Prompt user to select a wallet
@@ -188,18 +203,21 @@ export default function useHome() {
     onBuildApproveTxData,
     onApproveWallet,
     getBridgeTxData,
+    setChainFrom,
     setInProgress,
     setIsModalOpen,
     setIsErrorOpen,
     setTxHash,
     setError,
     setIsApproved,
+    tokens,
     isConnected,
     isApproved,
     isErrorOpen,
     inProgress,
     isModalOpen,
     provider,
+    chainFrom,
     bridgeTx,
     buildApproveTx,
     txHash,

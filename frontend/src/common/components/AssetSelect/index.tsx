@@ -4,10 +4,10 @@ import Select from "react-select";
 import IconOption from "../Select/IconOption";
 import ValueOption from "../Select/ValueOption";
 import { getFlexCenter, getHorizontalGap } from "../../styles";
+import { TokenResponseDto } from "../../dtos";
+import { IconKeys } from "../../commonTypes";
 
-const Root = styled.div`
- 
-`;
+const Root = styled.div``;
 
 const Container = styled.div`
   display: flex;
@@ -17,9 +17,9 @@ const Container = styled.div`
 `;
 
 const Label = styled.div`
-font-weight: 700;
-font-size: ${({ theme }) => theme.heading.xs};
-color: ${({ theme }) => theme.secondaryColor};
+  font-weight: 700;
+  font-size: ${({ theme }) => theme.heading.xs};
+  color: ${({ theme }) => theme.secondaryColor};
 `;
 
 const StyledSelect = styled(Select)`
@@ -32,28 +32,17 @@ const StyledSelect = styled(Select)`
 `;
 
 type Props = {
-  isDisabled: boolean
+  isLoading?: boolean;
+  tokens: TokenResponseDto[];
   onSelectAsset: (value: any) => void;
 };
-const AssetSelect = ({ isDisabled, onSelectAsset }: Props) => {
+const AssetSelect = ({ tokens, onSelectAsset, isLoading,  }: Props) => {
   const customStyles: any = {
     control: (provided: CSSProperties, state: any) => ({
       ...provided,
       borderRadius: "10px",
     }),
   };
-  const tokens = [
-    {
-      label: "USDC",
-      value: "1",
-      icon: <Icon name="usdc" size="20px" />,
-    },
-    {
-      label: "ETH",
-      value: "0",
-      icon: <Icon name="ethereum" size="20px" />,
-    },
-  ];
 
   return (
     <Root>
@@ -61,11 +50,18 @@ const AssetSelect = ({ isDisabled, onSelectAsset }: Props) => {
         <Label>Send</Label>
         <StyledSelect
           styles={customStyles}
-          options={tokens}
+          options={tokens ? tokens.map((token: TokenResponseDto, index: number) => {
+            const name = token.symbol.toLocaleLowerCase() as IconKeys;
+            return {
+              label: token.symbol,
+              value: index.toString(),
+              icon: <Icon name={name} size="20px" />,
+            };
+          }) : []}
           placeholder={null}
           onChange={onSelectAsset}
           components={{ Option: IconOption, SingleValue: ValueOption }}
-          isDisabled={isDisabled}
+          isDisabled={isLoading}
         />
       </Container>
     </Root>

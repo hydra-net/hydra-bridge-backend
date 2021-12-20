@@ -123,7 +123,7 @@ const BridgeRoutes = ({ routes, selectedRouteId, onClick }: Props) => {
                       name={
                         route.fromAsset === Asset[Asset.usdc]
                           ? "usdc"
-                          : "ethereum"
+                          : "eth"
                       }
                     />
                   </div>
@@ -153,7 +153,7 @@ const BridgeRoutes = ({ routes, selectedRouteId, onClick }: Props) => {
                       name={
                         route.fromAsset === Asset[Asset.usdc]
                           ? "usdc"
-                          : "ethereum"
+                          : "eth"
                       }
                     />
                   </div>

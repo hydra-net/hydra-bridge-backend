@@ -65,7 +65,7 @@ const TransferChainSelects = ({
     {
       label: "Goerli",
       value: 5,
-      icon: <Icon name="ethereum" size="20px" />,
+      icon: <Icon name="eth" size="20px" />,
     },
     // {
     //   label: "Polygon mumbai",

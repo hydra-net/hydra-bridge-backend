@@ -68,13 +68,11 @@ const ErrorContainer = styled.div`
 `;
 
 const Home = () => {
-  const [chainFrom, setChainFrom] = useState<number>();
   const [chainTo, setChainTo] = useState<number>();
   const [asset, setAsset] = useState<number>();
   const [amountIn, setAmountIn] = useState<number>(0);
   const [amountOut, setAmountOut] = useState<number>(0.0);
   const [routeId, setRouteId] = useState<number>();
-
   const {
     onConnectWallet,
     onCheckAllowance,
@@ -82,12 +80,14 @@ const Home = () => {
     onApproveWallet,
     getBridgeTxData,
     onGetQuote,
+    setChainFrom,
     setIsErrorOpen,
     setInProgress,
     setTxHash,
     setIsModalOpen,
     setIsApproved,
     setError,
+    tokens,
     isErrorOpen,
     isConnected,
     isApproved,
@@ -96,6 +96,7 @@ const Home = () => {
     bridgeTx,
     provider,
     bridgeRoutes,
+    chainFrom,
     txHash,
     error,
     onBoard,
@@ -171,10 +172,13 @@ const Home = () => {
       await getBridgeTxData(dto);
     }
 
-    if ((isApproved || asset?.toString() === Asset.eth.toString()) && routeId! >= 0) {
+    if (
+      (isApproved || asset?.toString() === Asset.eth.toString()) &&
+      routeId! >= 0
+    ) {
       getMoveTxData();
     }
-  }, [isApproved, routeId, amountIn]);  // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isApproved, routeId, amountIn]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSelectChainFrom = (option: any) => {
     if (option.value !== chainTo) {
@@ -228,7 +232,7 @@ const Home = () => {
       if (receipt.logs) {
         setInProgress(false);
         setChainTo(undefined);
-        setChainFrom(undefined);
+        setChainFrom(0);
         setAmountOut(0.0);
         setAmountIn(0);
         setAsset(undefined);
@@ -252,7 +256,8 @@ const Home = () => {
         <Wrapper>
           <SendWrapper>
             <AssetSelect
-              isDisabled={inProgress}
+              isLoading={inProgress}
+              tokens={tokens!}
               onSelectAsset={handleSelectAsset}
             />
           </SendWrapper>
