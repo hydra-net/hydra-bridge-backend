@@ -16,7 +16,6 @@ export const getBridgeTokens = async (
     });
   } catch (e) {
     next(createError(e.statusCode, e.message));
-    hydraLogger.error(e.message);
   }
 };
 
@@ -32,6 +31,5 @@ export const getCommonChains = async (
     });
   } catch (e) {
     next(createError(e.statusCode, e.message));
-    hydraLogger.error(e.message);
   }
 };

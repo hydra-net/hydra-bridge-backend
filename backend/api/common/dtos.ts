@@ -7,7 +7,19 @@ export interface BaseListResponseDto<T> {
 
 export interface BaseResponseDto<T> {
   success: boolean;
-  results: T[];
+  result: T;
+}
+
+export interface AllowanceRequestDto {
+  chainId: string;
+  owner: string;
+  spender: string;
+  tokenAddress: string;
+}
+
+export interface AllowanceResponseDto {
+  value: number;
+  tokenAddress: string;
 }
 
 export interface CheckAllowanceDto {

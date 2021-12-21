@@ -1,4 +1,6 @@
 import {
+  BaseListResponseDto,
+  BaseResponseDto,
   BuildTxRequestDto,
   BuildTxResponseDto,
   QuoteRequestDto,
@@ -14,6 +16,7 @@ import { getTimestamp } from "../helpers/time";
 import { getChainFromId } from "../helpers/chainHelper";
 import { parseUnits } from "ethers/lib/utils";
 import { isNotEmpty } from "../helpers/stringHelper";
+import { consoleLogger, hydraLogger } from "../helpers/hydraLogger";
 
 require("dotenv").config();
 const { ETH_CONTRACT, HOP_RELAYER, HOP_RELAYER_FEE } = process.env;
@@ -22,14 +25,19 @@ const HYDRA_BRIDGE_INTERFACE = new Interface(hydraBridge);
 
 export const getQuote = async (
   dto: QuoteRequestDto
-): Promise<QuoteResponseDto[]> => {
-  const quotes : QuoteResponseDto[] = []
+): Promise<BaseListResponseDto<QuoteResponseDto>> => {
+  let response: BaseListResponseDto<QuoteResponseDto> = {
+    success: true,
+    results: [],
+  };
+
+  const quotes: QuoteResponseDto[] = [];
   if (
-    dto.fromAsset &&
-    dto.fromChainId &&
-    dto.toAsset &&
-    dto.toChainId &&
-    dto.amount
+    isNotEmpty(dto.fromAsset) &&
+    isNotEmpty(dto.fromChainId) &&
+    isNotEmpty(dto.toAsset) &&
+    isNotEmpty(dto.toChainId) &&
+    isNotEmpty(dto.amount)
   ) {
     if (
       Asset[dto.fromAsset] === Asset[dto.toAsset] &&
@@ -49,10 +57,9 @@ export const getQuote = async (
           fromChainId: ChainId[dto.fromChainId],
           toChainId: ChainId[dto.toChainId],
         };
-        quotes.push(polygonRoute)
-     
-        if(dto.fromAsset.toString() !== Asset.eth.toString())
-        {
+        quotes.push(polygonRoute);
+
+        if (dto.fromAsset.toString() !== Asset.eth.toString()) {
           const hopRoute: QuoteResponseDto = {
             routeId: RouteId.hop,
             amountIn: dto.amount,
@@ -64,22 +71,27 @@ export const getQuote = async (
             fromChainId: ChainId[dto.fromChainId],
             toChainId: ChainId[dto.toChainId],
           };
-          quotes.push(hopRoute)
+          quotes.push(hopRoute);
         }
-   
-       return quotes
+
+        response.results = quotes;
       } catch (e) {
-        console.log("Quote error", e);
+        consoleLogger.error(e);
+        hydraLogger.error(e);
+        return e;
       }
     }
   }
-  return [];
+  return response;
 };
 
 export const buildTx = async (
   dto: BuildTxRequestDto
-): Promise<BuildTxResponseDto> => {
-  console.log(dto);
+): Promise<BaseResponseDto<BuildTxResponseDto>> => {
+  let response: BaseResponseDto<BuildTxResponseDto> = {
+    success: true,
+    result: { data: "", to: "", from: "" },
+  };
   try {
     if (
       isNotEmpty(dto.fromAsset) &&
@@ -91,23 +103,20 @@ export const buildTx = async (
     ) {
       if (dto.fromAsset === dto.toAsset && dto.fromChainId !== dto.toChainId) {
         if (dto.routeId === RouteId.polygon.toString()) {
-          return getPolygonRoute(dto);
+          response.result = getPolygonRoute(dto);
         }
 
         if (dto.routeId === RouteId.hop.toString()) {
-          return getHopRoute(dto);
+          response.result = getHopRoute(dto);
         }
       }
     }
 
-    return {
-      data: "",
-      to: "",
-      from: "",
-    };
+    return response;
   } catch (e) {
-    console.log("Build tx error:", e);
-    throw new Error(e.message);
+    consoleLogger.error(e);
+    hydraLogger.error(e);
+    return e;
   }
 };
 
@@ -142,19 +151,16 @@ const getPolygonRoute = (dto: BuildTxRequestDto): BuildTxResponseDto => {
     dto.fromAsset === Asset.eth.toString() &&
     dto.toAsset === Asset.eth.toString()
   ) {
-
     const sendEthToPolygonData = HYDRA_BRIDGE_INTERFACE.encodeFunctionData(
       "sendEthToPolygon",
       [dto.recipient]
     );
-  
+
     return {
       data: sendEthToPolygonData,
       to: ETH_CONTRACT,
       from: dto.recipient,
-      value: ethers.utils
-        .parseEther(dto.amount)
-        .toHexString(),
+      value: ethers.utils.parseEther(dto.amount).toHexString(),
       bridgeId: BridgeId.polygon,
     };
   }
@@ -195,34 +201,6 @@ const getHopRoute = (dto: BuildTxRequestDto): BuildTxResponseDto => {
       bridgeId: BridgeId.hop,
     };
   }
-
-  // if (
-  //   dto.fromAsset === Asset.eth.toString() &&
-  //   dto.toAsset === Asset.eth.toString()
-  // ) {
-  //   console.log("tu sam eth hop")
-  //   const sendToL2HopData = HYDRA_BRIDGE_INTERFACE.encodeFunctionData(
-  //     "sendEthToL2Hop",
-  //     [
-  //       dto.recipient,
-  //       getChainFromId(dto.toChainId),
-  //       0,
-  //       Date.now() + 30,
-  //       HOP_RELAYER,
-  //       0,
-  //     ]
-  //   );
-  //     console.log(dto.amount)
-  //   return {
-  //     data: sendToL2HopData,
-  //     to: ETH_CONTRACT,
-  //     from: dto.recipient,
-  //     value: ethers.utils
-  //     .parseEther(dto.amount)
-  //     .toHexString(),
-  //     bridgeId: BridgeId.hop,
-  //   };
-  // }
 
   return {
     data: "",

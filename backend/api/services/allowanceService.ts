@@ -1,15 +1,18 @@
 import {
   BuildAllowanceRequestDto,
   BuildAllowanceResponseDto,
-  CheckAllowanceDto,
+  AllowanceRequestDto,
+  AllowanceResponseDto,
+  BaseResponseDto,
 } from "../common/dtos";
 import { getProvider } from "../helpers/web3";
-import { BigNumber, ethers } from "ethers";
+import { ethers } from "ethers";
 import { erc20Abi } from "../common/abis/erc20Abi";
 import { Interface } from "@ethersproject/abi";
-import { Asset, ChainId } from "../common/enums";
+import {  ChainId } from "../common/enums";
 import { parseUnits } from "ethers/lib/utils";
 import { isNotEmpty } from "../helpers/stringHelper";
+import { consoleLogger, hydraLogger } from "../helpers/hydraLogger";
 require("dotenv").config();
 
 const { USDC_GOERLI } = process.env;
@@ -29,14 +32,21 @@ const ERC20_INTERFACE = new Interface([
   },
 ]);
 
-export const getAllowance = async (dto: CheckAllowanceDto) => {
-  try {
-    let response = {
+export const getAllowance = async (dto: AllowanceRequestDto) => {
+  let response: BaseResponseDto<AllowanceResponseDto> = {
+    success: true,
+    result: {
       value: 0,
       tokenAddress: dto.tokenAddress,
-    };
-    if (isNotEmpty(dto.chainId) && isNotEmpty(dto.owner) && isNotEmpty(dto.spender) && isNotEmpty(dto.tokenAddress)) {
-    
+    },
+  };
+  try {
+    if (
+      isNotEmpty(dto.chainId) &&
+      isNotEmpty(dto.owner) &&
+      isNotEmpty(dto.spender) &&
+      isNotEmpty(dto.tokenAddress)
+    ) {
       if (dto.chainId === ChainId.goerli.toString()) {
         const rootToken = new ethers.Contract(
           dto.tokenAddress,
@@ -45,27 +55,32 @@ export const getAllowance = async (dto: CheckAllowanceDto) => {
         );
 
         const res = await rootToken.functions.allowance(dto.owner, dto.spender);
-        response.value = res.toString();
+        response.result = res.toString();
       }
     }
 
     return response;
   } catch (e) {
-    console.log(e);
+    consoleLogger.error(e);
+    hydraLogger.error(e);
+    response.success = false;
     return e;
   }
 };
 
 export const buildTx = async (
   dto: BuildAllowanceRequestDto
-): Promise<BuildAllowanceResponseDto> => {
-  try {
-    let response: BuildAllowanceResponseDto = {
+): Promise<BaseResponseDto<BuildAllowanceResponseDto>> => {
+  let response: BaseResponseDto<BuildAllowanceResponseDto> = {
+    success: true,
+    result: {
       data: "",
       to: "",
       from: "",
-    };
+    },
+  };
 
+  try {
     if (
       isNotEmpty(dto.chainId) &&
       isNotEmpty(dto.owner) &&
@@ -73,7 +88,6 @@ export const buildTx = async (
       isNotEmpty(dto.tokenAddress) &&
       isNotEmpty(dto.amount)
     ) {
-    
       if (dto.chainId === ChainId.goerli.toString()) {
         const rootToken = new ethers.Contract(
           dto.tokenAddress,
@@ -85,7 +99,7 @@ export const buildTx = async (
           dto.owner,
           dto.spender
         );
-  
+
         const units = dto.tokenAddress === USDC_GOERLI ? 6 : 18;
         const parsedAmount = parseUnits(dto.amount, units);
         const amountToSpend = ethers.BigNumber.from(parsedAmount.toString());
@@ -95,7 +109,7 @@ export const buildTx = async (
             dto.spender,
             ethers.utils.hexlify(amountToSpend),
           ]);
-          return {
+          response.result = {
             data: approveData,
             to: dto.tokenAddress,
             from: dto.owner,
@@ -106,7 +120,9 @@ export const buildTx = async (
 
     return response;
   } catch (e) {
-    console.log("Allowance error", e);
+    consoleLogger.error(e);
+    hydraLogger.error(e);
+    response.success = false;
     return e;
   }
 };

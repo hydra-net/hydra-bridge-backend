@@ -4,6 +4,7 @@ import {
   TokenResponseDto,
 } from "../common/dtos";
 import prisma from "../helpers/db";
+import { consoleLogger, hydraLogger } from "../helpers/hydraLogger";
 
 require("dotenv").config();
 var environment = process.env.NODE_ENV || 'dev';
@@ -59,8 +60,8 @@ export const getTokens = async (chainId: string) => {
     }
     return response;
   } catch (e) {
-    console.log(e);
-    response.success = false;
+    consoleLogger.error(e);
+    hydraLogger.error(e)
     return response;
   }
 };
@@ -114,8 +115,8 @@ export const getChains = async () => {
     }
     return response;
   } catch (e) {
-    console.log(e);
-    response.success = false;
-    return response;
+    consoleLogger.error(e);
+    hydraLogger.error(e)
+    return e;
   }
 };
