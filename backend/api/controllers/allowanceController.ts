@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import createError from "http-errors";
+import {  hydraLogger } from "../helpers/hydraLogger";
 import { buildTx, getAllowance } from "../services/allowanceService";
 
 export const checkAllowance = async (
@@ -20,6 +21,7 @@ export const checkAllowance = async (
     });
   } catch (e) {
     next(createError(e.statusCode, e.message));
+    hydraLogger.error(e.message);
   }
 };
 
@@ -43,5 +45,6 @@ export const buildAllowanceTx = async (
   } catch (e) {
     console.log(e)
     next(createError(e.statusCode, e.message));
+    hydraLogger.error(e.message);
   }
 };

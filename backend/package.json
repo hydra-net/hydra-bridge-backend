@@ -10,7 +10,8 @@
     "http-errors": "^1.8.1",
     "prisma": "^3.6.0",
     "swagger-jsdoc": "^6.1.0",
-    "web3": "^1.6.1"
+    "web3": "^1.6.1",
+    "winston": "^3.3.3"
   },
   "devDependencies": {
     "@maticnetwork/maticjs": "^2.0.50",
@@ -28,6 +29,7 @@
     "dotenv": "^10.0.0",
     "ethereum-waffle": "^3.0.0",
     "ethers": "^5.0.0",
+    "express-winston": "^4.2.0",
     "hardhat": "^2.7.0",
     "nodemon": "^2.0.15",
     "swagger-ui-express": "^4.2.0",

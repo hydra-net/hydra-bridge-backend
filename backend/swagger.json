@@ -240,6 +240,20 @@
           }
         }
       }
+    },
+    "/common/chains": {
+      "get": {
+        "tags": ["Common"],
+        "summary": "Get chains for transfering from, to",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/ChainsResponseDto"
+            }
+          }
+        }
+      }
     }
   },
   "definitions": {
@@ -410,9 +424,6 @@
     },
     "TokenResponseDto": {
       "properties": {
-        "id": {
-          "type": "number"
-        },
         "name": {
           "type": "string"
         },
@@ -427,6 +438,45 @@
         },
         "symbol": {
           "type": "string"
+        }
+      }
+    },
+    "ChainsResponseDto": {
+      "properties": {
+        "success": {
+          "type": "boolean"
+        },
+        "results": {
+          "type": "array",
+          "$ref": "#/definitions/ChainResponseDto"
+        }
+      }
+    },
+    "ChainResponseDto": {
+      "properties": {
+        "chainId": {
+          "type": "number"
+        },
+        "name": {
+          "type": "string"
+        },
+        "isL1": {
+          "type": "boolean"
+        },
+        "isTestnet": {
+          "type": "boolean"
+        },
+        "isSendingEnabled": {
+          "type": "boolean"
+        },
+        "isReceivingEnabled": {
+          "type": "boolean"
+        },
+        "currency": {
+          "$ref": "#/definitions/TokenResponseDto"
+        },
+        "explorers": {
+          "type": "array"
         }
       }
     }

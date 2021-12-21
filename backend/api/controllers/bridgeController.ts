@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import createError from "http-errors";
+import { hydraLogger } from "../helpers/hydraLogger";
 import { buildTx, getQuote} from "../services/bridgeService";
 
 
@@ -32,6 +33,7 @@ export const buildTransaction = async (
     });
   } catch (e) {
     next(createError(e.statusCode, e.message));
+    hydraLogger.error(e.message);
   }
 };
 
@@ -60,5 +62,6 @@ export const quote = async (
     });
   } catch (e) {
     next(createError(e.statusCode, e.message));
+    hydraLogger.error(e.message);
   }
 };

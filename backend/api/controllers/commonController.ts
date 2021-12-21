@@ -1,12 +1,13 @@
 import { Request, Response, NextFunction } from "express";
 import createError from "http-errors";
-import { getTokens } from "../services/commonService";
+import { hydraLogger } from "../helpers/hydraLogger";
+import { getChains, getTokens } from "../services/commonService";
 
 export const getBridgeTokens = async (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+)  => {
   try {
     const { chainId }: any = req.query;
     const result = await getTokens(chainId);
@@ -15,5 +16,22 @@ export const getBridgeTokens = async (
     });
   } catch (e) {
     next(createError(e.statusCode, e.message));
+    hydraLogger.error(e.message);
+  }
+};
+
+export const getCommonChains = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+)  => {
+  try {
+    const result = await getChains();
+    res.status(200).json({
+      data: result,
+    });
+  } catch (e) {
+    next(createError(e.statusCode, e.message));
+    hydraLogger.error(e.message);
   }
 };
