@@ -1,8 +1,13 @@
 import { Asset, BridgeId, ChainId, RouteId } from "./enums";
 
-export interface BaseListResponseDto {
+export interface BaseListResponseDto<T> {
   success: boolean;
-  results: any[];
+  results: T[];
+}
+
+export interface BaseResponseDto<T> {
+  success: boolean;
+  results: T[];
 }
 
 export interface CheckAllowanceDto {
@@ -61,7 +66,7 @@ export interface BuildTxResponseDto {
   to: string;
   from: string;
   value?: any;
-  bridgeId?: BridgeId;
+  bridgeId?: number;
 }
 
 export interface TokenResponseDto {
@@ -72,6 +77,15 @@ export interface TokenResponseDto {
   symbol: string;
 }
 
-export interface TokensResponseDto extends BaseListResponseDto {
-  results: TokenResponseDto[];
+export interface ChainResponseDto {
+  chainId: number;
+  name: string;
+  isL1: boolean;
+  isTestnet: boolean;
+  isSendingEnabled: boolean;
+  isReceivingEnabled: boolean;
+  currency : TokenResponseDto
+  explorers: string[]
 }
+
+
