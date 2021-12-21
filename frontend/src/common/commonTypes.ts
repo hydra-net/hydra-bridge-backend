@@ -1,7 +1,7 @@
 import  icons  from "./components/Icon";
 
-export interface IApiResponse {
-    data?: any;
+export interface IApiResponse<T> {
+    result?: T;
     status?: number;
     errorMsg?: any;
     message?: string;
@@ -10,7 +10,8 @@ export interface IApiResponse {
 
   export interface ISelectOption {
     label: string;
-    value: string;
+    value: any;
+    icon?: any
   }
 
   export interface IStyleableProps {

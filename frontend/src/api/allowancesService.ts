@@ -1,4 +1,8 @@
-import { IApiResponse } from "../common/commonTypes";
+import {
+  BaseResponseDto,
+  BuildAllowanceResponseDto,
+  CheckAllowanceResponseDto,
+} from "../common/dtos";
 import { fetchWrapper } from "../helpers/fetchWrapper";
 
 require("dotenv").config();
@@ -9,11 +13,11 @@ export const checkAllowance = async (
   owner: string,
   spender: string,
   tokenAddress: string
-): Promise<any> => {
-  const response: IApiResponse = await fetchWrapper.get(
+): Promise<BaseResponseDto<CheckAllowanceResponseDto>> => {
+  const response: any = await fetchWrapper.get(
     `${REACT_APP_API_URL}/approval/check-allowance?chainId=${chainId}&owner=${owner}&spender=${spender}&tokenAddress=${tokenAddress}`
   );
-  return response.data;
+  return response.result.data;
 };
 
 export const buildApprovalTx = async (
@@ -21,10 +25,11 @@ export const buildApprovalTx = async (
   owner: string,
   spender: string,
   tokenAddress: string,
-  amount: string,
-): Promise<any> => {
-  const response: IApiResponse = await fetchWrapper.get(
-    `${REACT_APP_API_URL}/approval/build-tx?chainId=${chainId}&owner=${owner}&spender=${spender}&tokenAddress=${tokenAddress}&amount=${amount}`
-  );
-  return response.data;
+  amount: string
+): Promise<BaseResponseDto<BuildAllowanceResponseDto>> => {
+  const response: any =
+    await fetchWrapper.get(
+      `${REACT_APP_API_URL}/approval/build-tx?chainId=${chainId}&owner=${owner}&spender=${spender}&tokenAddress=${tokenAddress}&amount=${amount}`
+    );
+  return response.result.data;
 };

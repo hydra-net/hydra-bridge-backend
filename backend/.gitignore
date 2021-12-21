@@ -4,3 +4,4 @@ node_modules
 #Hardhat files
 hardhat/cache/*
 hardhat/artifacts/*
+app-error.log

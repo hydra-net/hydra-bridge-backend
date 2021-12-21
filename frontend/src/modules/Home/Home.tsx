@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
 import styled from "styled-components";
+import { ISelectOption } from "../../common/commonTypes";
 import ActionButtons from "../../common/components/ActionButtons/ActionButtons";
 import AppMessage from "../../common/components/AppMessage";
 import AssetSelect from "../../common/components/AssetSelect";
 import BridgeRoutes from "../../common/components/BridgeRoutes/BridgeRoutes";
+import Icon from "../../common/components/Icon/Icon";
 import AmountInput from "../../common/components/Input";
 import HydraModal from "../../common/components/Modal/HydraModal";
 import TransferChainSelects from "../../common/components/TransferChain/TransferChainSelects";
-import { BuildTxRequestDto } from "../../common/dtos";
+import { BuildTxRequestDto, ChainResponseDto } from "../../common/dtos";
 import { Asset } from "../../common/enums";
 import {
   getFlexCenter,
@@ -68,7 +70,6 @@ const ErrorContainer = styled.div`
 `;
 
 const Home = () => {
-  const [chainTo, setChainTo] = useState<number>();
   const [asset, setAsset] = useState<number>();
   const [amountIn, setAmountIn] = useState<number>(0);
   const [amountOut, setAmountOut] = useState<number>(0.0);
@@ -81,6 +82,7 @@ const Home = () => {
     getBridgeTxData,
     onGetQuote,
     setChainFrom,
+    setChainTo,
     setIsErrorOpen,
     setInProgress,
     setTxHash,
@@ -88,6 +90,7 @@ const Home = () => {
     setIsApproved,
     setError,
     tokens,
+    chains,
     isErrorOpen,
     isConnected,
     isApproved,
@@ -96,6 +99,7 @@ const Home = () => {
     bridgeTx,
     provider,
     bridgeRoutes,
+    chainTo,
     chainFrom,
     txHash,
     error,
@@ -231,7 +235,7 @@ const Home = () => {
       const receipt = await tx.wait();
       if (receipt.logs) {
         setInProgress(false);
-        setChainTo(undefined);
+        setChainTo(0);
         setChainFrom(0);
         setAmountOut(0.0);
         setAmountIn(0);
@@ -246,6 +250,26 @@ const Home = () => {
       setIsErrorOpen(true);
     }
   };
+
+  const chainsFrom: ISelectOption[] = chains ? chains
+    .filter((item) => item.chainId === 5)
+    .map((chain: ChainResponseDto) => {
+      return {
+        label: chain.name,
+        value: chain.chainId,
+        icon: <Icon name={"eth"} size="20px" />,
+      };
+    }) : [];
+
+  const chainsTo: ISelectOption[] =  chains ?  chains
+    .filter((item) => item.chainId === 80001)
+    .map((chain: ChainResponseDto) => {
+      return {
+        label: chain.name,
+        value: chain.chainId,
+        icon: <Icon name={"polygon"} size="20px" />,
+      };
+    }) : [];
 
   return (
     <>
@@ -273,6 +297,8 @@ const Home = () => {
           <TransferWrapper>
             <Container>
               <TransferChainSelects
+                chainsFrom={chainsFrom}
+                chainsTo={chainsTo}
                 chainFrom={chainFrom!}
                 chainTo={chainTo!}
                 onSelectChainFrom={handleSelectChainFrom}

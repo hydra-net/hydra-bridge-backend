@@ -9,18 +9,19 @@ export const fetchWrapper = {
   delete: _delete,
 };
 
-function get(url: string) {
+async function get<T>(url: string): Promise<IApiResponse<T>> {
   const requestOptions: any = {
     method: "GET",
   };
-  return fetch(url, requestOptions).then(handleResponse);
+  const resp = await fetch(url, requestOptions);
+  return handleResponse<T>(resp);
 }
 
 function post(
   url: string,
   body: any,
   contentType: string = "application/json"
-) {
+ ) {
   const requestOptions: any = {
     method: "POST",
     headers: { "Content-Type": contentType },
@@ -51,10 +52,10 @@ function _delete(url: string) {
   return fetch(url, requestOptions).then(handleResponse);
 }
 
-function handleResponse(response: any) {
+function handleResponse<T>(response: any) {
   return response.text().then((text: string) => {
     const data = text && parseJson(text);
-    let resp: IApiResponse = { data: data };
+    let resp: IApiResponse<T> = { result: data };
     if (!response.ok) {
       switch (response.status) {
         case 400:

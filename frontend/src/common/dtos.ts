@@ -1,14 +1,25 @@
-import { Asset, BridgeId, ChainId, RouteId } from "./enums";
+import { BridgeId } from "./enums";
 
-export interface BaseListResponseDto {
-  success: boolean
-  results: any[]
+export interface BaseListResponseDto<T> {
+  success: boolean;
+  results: any[];
+}
+
+
+export interface BaseResponseDto<T> {
+  success: boolean;
+  result: T;
 }
 
 export interface CheckAllowanceDto {
   chainId: string;
   owner: string;
   spender: string;
+  tokenAddress: string;
+}
+
+export interface CheckAllowanceResponseDto {
+  value: string;
   tokenAddress: string;
 }
 
@@ -33,7 +44,7 @@ export interface BuildTxRequestDto {
   toAsset: number;
   toChainId: number;
   amount: number;
-  routeId: number
+  routeId: number;
 }
 
 export interface QuoteRequestDto {
@@ -50,10 +61,10 @@ export interface QuoteResponseDto {
   toAsset: string;
   toChainId: string;
   amountIn: string;
-  amountOut: string
+  amountOut: string;
   allowanceTarget: string;
   isApprovalRequired: boolean;
-  routeId: string
+  routeId: string;
 }
 
 export interface BuildTxResponseDto {
@@ -61,7 +72,7 @@ export interface BuildTxResponseDto {
   to: string;
   from: string;
   value?: any;
-  bridgeId?: BridgeId
+  bridgeId?: BridgeId;
 }
 
 export interface TokenResponseDto {
@@ -72,6 +83,13 @@ export interface TokenResponseDto {
   symbol: string;
 }
 
-export interface TokensResponseDto extends BaseListResponseDto {
-  results: TokenResponseDto[];
+export interface ChainResponseDto {
+  chainId: number;
+  name: string;
+  isL1: boolean;
+  isTestnet: boolean;
+  isSendingEnabled: boolean;
+  isReceivingEnabled: boolean;
+  currency: TokenResponseDto;
+  explorers: string[];
 }

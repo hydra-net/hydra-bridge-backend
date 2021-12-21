@@ -4,9 +4,14 @@ import { ethers } from "ethers";
 import { API } from "bnc-onboard/dist/src/interfaces";
 import { buildApprovalTx, checkAllowance } from "../../api/allowancesService";
 import { buildBridgeTx, getQuote } from "../../api/bridgeService";
-import { BuildTxRequestDto, QuoteRequestDto, TokenResponseDto } from "../../common/dtos";
+import {
+  BuildTxRequestDto,
+  ChainResponseDto,
+  QuoteRequestDto,
+  TokenResponseDto,
+} from "../../common/dtos";
 import { parseUnits } from "ethers/lib/utils";
-import { getBridgeTokens } from "../../api/commonService";
+import { getAllChains, getBridgeTokens } from "../../api/commonService";
 require("dotenv").config();
 
 const {
@@ -42,7 +47,9 @@ export default function useHome() {
 
   //tokens
   const [tokens, setTokens] = useState<TokenResponseDto[]>([]);
+  const [chains, setChains] = useState<ChainResponseDto[]>([]);
   const [chainFrom, setChainFrom] = useState<number>(5);
+  const [chainTo, setChainTo] = useState<number>(80001);
 
   //modal
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -80,11 +87,26 @@ export default function useHome() {
     async function getTokens() {
       setInProgress(true);
       const result = await getBridgeTokens(chainFrom);
-      setTokens(result.data.results);
+      if (result && result.success) {
+        setTokens(result.results);
+      }
+
       setInProgress(false);
     }
     getTokens();
-  },[chainFrom])
+  }, [chainFrom]);
+
+  useEffect(() => {
+    async function getChains() {
+      setInProgress(true);
+      const result = await getAllChains();
+      if (result && result.success) {
+        setChains(result.results);
+      }
+      setInProgress(false);
+    }
+    getChains();
+  }, []);
 
   const onConnectWallet = async () => {
     // Prompt user to select a wallet
@@ -111,7 +133,7 @@ export default function useHome() {
       const units = tokenAddress === REACT_APP_USDC_CONTRACT_GOERLI ? 6 : 18;
       const parsedAmountToSpend = parseUnits(amountIn.toString(), units);
       const amountToSpend = ethers.BigNumber.from(parsedAmountToSpend);
-      const amountAllowed = ethers.BigNumber.from(res.data.value.toString());
+      const amountAllowed = ethers.BigNumber.from(res.result?.value.toString());
 
       setIsApproved(amountAllowed.gte(amountToSpend));
     } catch (e) {
@@ -124,7 +146,7 @@ export default function useHome() {
   const onGetQuote = async (dto: QuoteRequestDto) => {
     try {
       const res = await getQuote(dto);
-      setBridgeRoutes(res.data);
+      setBridgeRoutes(res.results);
     } catch (e) {
       console.log(e);
       setError(e);
@@ -147,8 +169,8 @@ export default function useHome() {
           tokenAddress,
           amount
         );
-        console.log("Build approve data", res.data);
-        setBuildApproveTx(res.data);
+        console.log("Build approve data", res.result);
+        setBuildApproveTx(res.result);
       }
     } catch (e) {
       console.log(e);
@@ -186,15 +208,13 @@ export default function useHome() {
     try {
       const res = await buildBridgeTx(dto);
       console.log("bridge tx data res", res);
-      setBridgeTx(res.data);
+      setBridgeTx(res.result);
     } catch (e) {
       console.log(e);
       setError(e);
       setIsErrorOpen(true);
     }
   };
-
-
 
   return {
     onConnectWallet,
@@ -204,12 +224,14 @@ export default function useHome() {
     onApproveWallet,
     getBridgeTxData,
     setChainFrom,
+    setChainTo,
     setInProgress,
     setIsModalOpen,
     setIsErrorOpen,
     setTxHash,
     setError,
     setIsApproved,
+    chains,
     tokens,
     isConnected,
     isApproved,
@@ -218,6 +240,7 @@ export default function useHome() {
     isModalOpen,
     provider,
     chainFrom,
+    chainTo,
     bridgeTx,
     buildApproveTx,
     txHash,

@@ -4,6 +4,7 @@ import Select from "react-select";
 import Icon from "../Icon/Icon";
 import IconOption from "../Select/IconOption";
 import ValueOption from "../Select/ValueOption";
+import { ISelectOption } from "../../commonTypes";
 
 const Root = styled.div`
   display: flex;
@@ -48,6 +49,8 @@ const customStyles: any = {
 };
 
 type Props = {
+  chainsFrom:  ISelectOption[] ;
+  chainsTo:  ISelectOption[] 
   chainFrom: number;
   chainTo: number;
   isDisabled: boolean;
@@ -55,36 +58,15 @@ type Props = {
   onSelectChainTo: (option: any) => void;
 };
 const TransferChainSelects = ({
+  chainsFrom,
+  chainsTo,
   chainFrom,
   chainTo,
   isDisabled,
   onSelectChainFrom,
   onSelectChainTo,
 }: Props) => {
-  const chainsFrom = [
-    {
-      label: "Goerli",
-      value: 5,
-      icon: <Icon name="eth" size="20px" />,
-    },
-    // {
-    //   label: "Polygon mumbai",
-    //   value: 80001,
-    //   icon: <Icon name="polygon" size="20px" />,
-    // },
-  ];
-  const chainsTo = [
-    // {
-    //   label: "Ethereum",
-    //   value: "0",
-    //   icon: <Icon name="ethereum" size="20px" />,
-    // },
-    {
-      label: "Polygon mumbai",
-      value: 80001,
-      icon: <Icon name="polygon" size="20px" />,
-    },
-  ];
+
 
   return (
     <Root>

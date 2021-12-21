@@ -51,11 +51,10 @@ const AssetSelect = ({ tokens, onSelectAsset, isLoading,  }: Props) => {
         <StyledSelect
           styles={customStyles}
           options={tokens ? tokens.map((token: TokenResponseDto, index: number) => {
-            const name = token.symbol.toLocaleLowerCase() as IconKeys;
             return {
               label: token.symbol,
               value: index.toString(),
-              icon: <Icon name={name} size="20px" />,
+              icon: <Icon name={token.symbol.toLocaleLowerCase() as IconKeys} size="20px" />,
             };
           }) : []}
           placeholder={null}
