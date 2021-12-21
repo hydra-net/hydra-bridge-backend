@@ -7,7 +7,7 @@ function App() {
     <div>
       <Router>
           <Routes>
-            <Route path={"/"} element={<Shell />} />
+            <Route path={"*"} element={<Shell />} />
           </Routes>
       </Router>
     </div>

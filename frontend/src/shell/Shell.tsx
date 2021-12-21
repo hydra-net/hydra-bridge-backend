@@ -9,6 +9,11 @@ const Home = lazyWithPreload(
   () => import(/* webpackChunkName: 'LandingModule' */ "../modules/Home/Home")
 );
 
+const Page404 = lazyWithPreload(
+  () =>
+    import(/* webpackChunkName: 'LandingModule' */ "../modules/Page404/Page404")
+);
+
 const Shell = () => {
   return (
     <>
@@ -16,6 +21,8 @@ const Shell = () => {
         <Suspense fallback={"loading..."}>
           <Routes>
             <Route path={routes.home} element={<Home />} />
+            <Route path={routes.page404} element={<Page404 />} />
+            <Route path="*" element={<Page404 />} />
           </Routes>
         </Suspense>
       </Layout>
