@@ -16,8 +16,6 @@ import {
   getFlexStart,
   getVerticalGap,
 } from "../../common/styles";
-import { getContractFromAsset } from "../../helpers/assetHelper";
-import { getChainFromId } from "../../helpers/chainHelper";
 import useHome from "./useHome";
 
 const Root = styled.div``;
@@ -70,7 +68,7 @@ const ErrorContainer = styled.div`
 `;
 
 const Home = () => {
-  const [asset, setAsset] = useState<number>();
+  const [asset, setAsset] = useState<number>(0);
   const [amountIn, setAmountIn] = useState<number>(0);
   const [amountOut, setAmountOut] = useState<number>(0.0);
   const [routeId, setRouteId] = useState<number>();
@@ -107,18 +105,14 @@ const Home = () => {
   } = useHome();
 
   useEffect(() => {
+    const token = tokens.find((t) => t.id === asset);
     async function checkAllowance() {
-      await onCheckAllowance(
-        amountIn!,
-        getChainFromId(chainFrom!)!,
-        getContractFromAsset(asset!)!
-      );
+      await onCheckAllowance(amountIn, chainFrom, token?.address!);
     }
+
     if (
       isConnected &&
-      !!amountIn &&
-      !!chainFrom &&
-      asset?.toString() === Asset.usdc.toString()
+      token?.symbol.toString().toLowerCase() === Asset[Asset.usdc]
     ) {
       checkAllowance();
     }
@@ -127,34 +121,26 @@ const Home = () => {
   useEffect(() => {
     async function getBridgesQuote() {
       await onGetQuote({
-        fromAsset: asset!,
-        fromChainId: chainFrom!,
-        toAsset: asset!,
-        toChainId: chainTo!,
-        amount: amountIn!,
+        fromAsset: asset,
+        fromChainId: chainFrom,
+        toAsset: asset,
+        toChainId: chainTo,
+        amount: amountIn,
       });
     }
-    if (!!asset && !!chainFrom && !!chainTo && !!amountIn) {
-      getBridgesQuote();
-    }
+
+    getBridgesQuote();
   }, [asset, chainFrom, chainTo, amountIn]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
+    const token = tokens.find((t) => t.id === asset);
     async function getApproveTxData() {
-      await onBuildApproveTxData(
-        getChainFromId(chainFrom!)!,
-        getContractFromAsset(asset!)!,
-        amountIn?.toString()!
-      );
+      await onBuildApproveTxData(chainFrom, token?.address!, amountIn);
     }
 
     if (
       isConnected &&
-      !!amountIn &&
-      !!chainFrom &&
-      !!asset &&
-      routeId! >= 0 &&
-      asset?.toString() === Asset.usdc.toString()
+      token?.symbol.toString().toLowerCase() === Asset[Asset.usdc]
     ) {
       getApproveTxData();
     }
@@ -239,7 +225,7 @@ const Home = () => {
         setChainFrom(0);
         setAmountOut(0.0);
         setAmountIn(0);
-        setAsset(undefined);
+        setAsset(0);
         setIsApproved(false);
         setRouteId(undefined);
         console.log("Move receipt logs", receipt.logs);
@@ -251,25 +237,29 @@ const Home = () => {
     }
   };
 
-  const chainsFrom: ISelectOption[] = chains ? chains
-    .filter((item) => item.chainId === 5)
-    .map((chain: ChainResponseDto) => {
-      return {
-        label: chain.name,
-        value: chain.chainId,
-        icon: <Icon name={"eth"} size="20px" />,
-      };
-    }) : [];
+  const chainsFrom: ISelectOption[] = chains
+    ? chains
+        .filter((item) => item.chainId === 5)
+        .map((chain: ChainResponseDto) => {
+          return {
+            label: chain.name,
+            value: chain.chainId,
+            icon: <Icon name={"eth"} size="20px" />,
+          };
+        })
+    : [];
 
-  const chainsTo: ISelectOption[] =  chains ?  chains
-    .filter((item) => item.chainId === 80001)
-    .map((chain: ChainResponseDto) => {
-      return {
-        label: chain.name,
-        value: chain.chainId,
-        icon: <Icon name={"polygon"} size="20px" />,
-      };
-    }) : [];
+  const chainsTo: ISelectOption[] = chains
+    ? chains
+        .filter((item) => item.chainId === 80001)
+        .map((chain: ChainResponseDto) => {
+          return {
+            label: chain.name,
+            value: chain.chainId,
+            icon: <Icon name={"polygon"} size="20px" />,
+          };
+        })
+    : [];
 
   return (
     <>
@@ -280,9 +270,10 @@ const Home = () => {
         <Wrapper>
           <SendWrapper>
             <AssetSelect
-              isLoading={inProgress}
+              selectedTokenId={asset}
               tokens={tokens!}
               onSelectAsset={handleSelectAsset}
+              isLoading={inProgress}
             />
           </SendWrapper>
           {error && (
@@ -334,11 +325,13 @@ const Home = () => {
               />
             </Container>
           </TransferWrapper>
-          <BridgeRoutes
-            selectedRouteId={routeId!}
-            routes={bridgeRoutes}
-            onClick={handleOnRouteClick}
-          />
+          {isConnected && (
+            <BridgeRoutes
+              selectedRouteId={routeId!}
+              routes={bridgeRoutes}
+              onClick={handleOnRouteClick}
+            />
+          )}
         </Wrapper>
       </Root>
 
