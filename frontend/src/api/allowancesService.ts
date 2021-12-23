@@ -1,7 +1,5 @@
 import {
   BaseResponseDto,
-  BuildAllowanceResponseDto,
-  CheckAllowanceResponseDto,
 } from "../common/dtos";
 import { fetchWrapper } from "../helpers/fetchWrapper";
 
@@ -13,12 +11,20 @@ export const checkAllowance = async (
   owner: string,
   spender: string,
   tokenAddress: string
-): Promise<BaseResponseDto<CheckAllowanceResponseDto>> => {
+): Promise<BaseResponseDto> => {
+  try {
   const response: any = await fetchWrapper.get(
     `${REACT_APP_API_URL}/approval/check-allowance?chainId=${chainId}&owner=${owner}&spender=${spender}&tokenAddress=${tokenAddress}`
   );
 
   return response.result.data;
+} catch (e) {
+  console.log(e);
+  return {
+    success: false,
+    result: null,
+  };
+}
 };
 
 export const buildApprovalTx = async (
@@ -27,10 +33,17 @@ export const buildApprovalTx = async (
   spender: string,
   tokenAddress: string,
   amount: number
-): Promise<BaseResponseDto<BuildAllowanceResponseDto>> => {
-  const response: any =
-    await fetchWrapper.get(
+): Promise<BaseResponseDto> => {
+  try {
+    const response: any = await fetchWrapper.get(
       `${REACT_APP_API_URL}/approval/build-tx?chainId=${chainId}&owner=${owner}&spender=${spender}&tokenAddress=${tokenAddress}&amount=${amount}`
     );
-  return response.result.data;
+    return response.result.data;
+  } catch (e) {
+    console.log(e);
+    return {
+      success: false,
+      result: null,
+    };
+  }
 };

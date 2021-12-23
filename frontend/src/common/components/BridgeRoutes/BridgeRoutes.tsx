@@ -48,16 +48,23 @@ const Route = styled.div<{ isSelected?: boolean }>`
     props.isSelected ? props.theme.greenColor : "transparent"};
   color: ${(props) =>
     props.isSelected ? props.theme.primaryColor : props.theme.secondaryColor};
-  ${getFlexCenter};
 `;
 
 const RouteContent = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  padding: 0px 10px 0px 10px;
+  height: 100%;
+`;
+
+const RouteItems = styled.div`
   width: 100%;
   display: flex;
   ${getHorizontalGap("5px")};
   flex-direction: row;
   justify-content: space-between;
-  padding: 10px;
 `;
 
 const AmountContainer = styled.div<{ isSelected?: boolean }>`
@@ -83,15 +90,29 @@ const BridgeNameStyled = styled.div`
   font-size: ${({ theme }) => theme.heading.xs};
 `;
 
+const FeeContainer = styled.div`
+font-size: ${({ theme }) => theme.paragraph.lg};
+font-weight: 700;
+margin-bottom: 5px;
+`;
+
 type Props = {
+  isEth: boolean;
   routes: RouteDto[];
   selectedRouteId?: number;
   onClick: (routeId: number) => void;
 };
-const BridgeRoutes = ({ routes, selectedRouteId, onClick }: Props) => {
+const BridgeRoutes = ({ isEth, routes, selectedRouteId, onClick }: Props) => {
   const theme = useTheme();
   if (!routes || routes.length === 0) {
     return null;
+  }
+  let filteredRoutes = routes;
+
+  if (isEth) {
+    filteredRoutes = routes.filter(
+      (route) => route.bridgeRoute.bridgeName !== "hop-bridge-goerli"
+    );
   }
 
   return (
@@ -100,10 +121,23 @@ const BridgeRoutes = ({ routes, selectedRouteId, onClick }: Props) => {
         <Title>Available routes:</Title>
       </TitleContainer>
       <Container>
-        {routes.map((route: RouteDto) => {
+        {filteredRoutes.map((route: RouteDto) => {
           const assetIconName =
             route.bridgeRoute.fromAsset.symbol.toLocaleLowerCase() as IconKeys;
           const isSelected = selectedRouteId === route.id;
+
+          const formatAmountIn =
+            route.bridgeRoute.amountIn !== ""
+              ? route.bridgeRoute.amountIn.length > 6
+                ? route.bridgeRoute.amountIn.substring(0, 5) + "..."
+                : route.bridgeRoute.amountIn
+              : "";
+          const formatAmountOut =
+            route.bridgeRoute.amountOut !== ""
+              ? route.bridgeRoute.amountOut.length > 6
+                ? route.bridgeRoute.amountOut.substring(0, 5) + "..."
+                : route.bridgeRoute.amountOut
+              : "";
 
           return (
             <Route
@@ -112,40 +146,57 @@ const BridgeRoutes = ({ routes, selectedRouteId, onClick }: Props) => {
               onClick={() => onClick(route.id)}
             >
               <RouteContent>
-                <AmountContainer>
-                  <div>
-                    <Icon name={assetIconName} />
-                  </div>
-                  <AmountStyled>{route.bridgeRoute.amountIn}</AmountStyled>
-                </AmountContainer>
-                <Icon
-                  name="arrowRight"
-                  color={isSelected ? theme.primaryColor : theme.secondaryColor}
-                />
-                <BridgeIconContainer>
+                <FeeContainer>
+                  {"Fee: $" +
+                    (
+                      Math.round(route.fees.transactionCoastUsd * 100) / 100
+                    ).toFixed(2)}
+                </FeeContainer>
+
+                <RouteItems>
+                  <AmountContainer>
+                    <div>
+                      <Icon name={assetIconName} />
+                    </div>
+                    <AmountStyled>{formatAmountIn}</AmountStyled>
+                  </AmountContainer>
+
                   <Icon
-                    height="24px"
-                    width="24px"
-                    name={
-                      getBridgeIconName(
-                        route.bridgeRoute.bridgeName
-                      ) as IconKeys
+                    name="arrowRight"
+                    color={
+                      isSelected ? theme.primaryColor : theme.secondaryColor
                     }
                   />
-                  <BridgeNameStyled>
-                    {route.bridgeRoute.bridgeInfo.displayName}
-                  </BridgeNameStyled>
-                </BridgeIconContainer>
+                  <BridgeIconContainer>
+                    <Icon
+                      height="24px"
+                      width="24px"
+                      name={
+                        getBridgeIconName(
+                          route.bridgeRoute.bridgeName
+                        ) as IconKeys
+                      }
+                    />
+                    <BridgeNameStyled>
+                      {route.bridgeRoute.bridgeInfo.displayName}
+                    </BridgeNameStyled>
+                  </BridgeIconContainer>
 
-                <Icon name="arrowRight" />
-                <AmountContainer>
-                  <div>
-                    <Icon name={assetIconName} />
-                  </div>
-                  <AmountStyled isSelected={isSelected}>
-                    {route.bridgeRoute.amountOut}
-                  </AmountStyled>
-                </AmountContainer>
+                  <Icon
+                    name="arrowRight"
+                    color={
+                      isSelected ? theme.primaryColor : theme.secondaryColor
+                    }
+                  />
+                  <AmountContainer>
+                    <div>
+                      <Icon name={assetIconName} />
+                    </div>
+                    <AmountStyled isSelected={isSelected}>
+                      {formatAmountOut}
+                    </AmountStyled>
+                  </AmountContainer>
+                </RouteItems>
               </RouteContent>
             </Route>
           );

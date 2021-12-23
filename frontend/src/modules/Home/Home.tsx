@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import styled from "styled-components";
 import { ISelectOption } from "../../common/commonTypes";
 import ActionButtons from "../../common/components/ActionButtons/ActionButtons";
@@ -10,7 +10,6 @@ import AmountInput from "../../common/components/Input";
 import HydraModal from "../../common/components/Modal/HydraModal";
 import TransferChainSelects from "../../common/components/TransferChain/TransferChainSelects";
 import { BuildTxRequestDto, ChainResponseDto } from "../../common/dtos";
-import { Asset } from "../../common/enums";
 import {
   getFlexCenter,
   getFlexStart,
@@ -68,27 +67,33 @@ const ErrorContainer = styled.div`
 `;
 
 const Home = () => {
-  const [asset, setAsset] = useState<number>(0);
-  const [amountIn, setAmountIn] = useState<number>(0);
-  const [amountOut, setAmountOut] = useState<number>(0.0);
-  const [routeId, setRouteId] = useState<number>();
   const {
     onConnectWallet,
     onCheckAllowance,
     onBuildApproveTxData,
     onApproveWallet,
+    onReset,
     getBridgeTxData,
     onGetQuote,
     setChainFrom,
     setChainTo,
+    setAsset,
+    setAmountIn,
+    setAmountOut,
+    setRouteId,
     setIsErrorOpen,
     setInProgress,
     setTxHash,
     setIsModalOpen,
-    setIsApproved,
     setError,
     tokens,
+    token,
+    isEth,
     chains,
+    amountIn,
+    amountOut,
+    routeId,
+    asset,
     isErrorOpen,
     isConnected,
     isApproved,
@@ -105,22 +110,19 @@ const Home = () => {
   } = useHome();
 
   useEffect(() => {
-    const token = tokens.find((t) => t.id === asset);
     async function checkAllowance() {
       await onCheckAllowance(amountIn, chainFrom, token?.address!);
     }
-
-    if (
-      isConnected &&
-      token?.symbol.toString().toLowerCase() === Asset[Asset.usdc]
-    ) {
+    if (isConnected && !isEth) {
       checkAllowance();
     }
   }, [isConnected, asset, amountIn, chainFrom]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     async function getBridgesQuote() {
+      const { address } = onBoard?.getState()!;
       await onGetQuote({
+        recipient: address,
         fromAsset: asset,
         fromChainId: chainFrom,
         toAsset: asset,
@@ -128,20 +130,17 @@ const Home = () => {
         amount: amountIn,
       });
     }
-
-    getBridgesQuote();
-  }, [asset, chainFrom, chainTo, amountIn]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (isConnected) {
+      getBridgesQuote();
+    }
+  }, [asset, chainFrom, chainTo, amountIn, isConnected]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    const token = tokens.find((t) => t.id === asset);
     async function getApproveTxData() {
       await onBuildApproveTxData(chainFrom, token?.address!, amountIn);
     }
 
-    if (
-      isConnected &&
-      token?.symbol.toString().toLowerCase() === Asset[Asset.usdc]
-    ) {
+    if (isConnected && !isEth) {
       getApproveTxData();
     }
   }, [isConnected, amountIn, chainFrom, asset, routeId]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -162,10 +161,7 @@ const Home = () => {
       await getBridgeTxData(dto);
     }
 
-    if (
-      (isApproved || asset?.toString() === Asset.eth.toString()) &&
-      routeId! >= 0
-    ) {
+    if (onBoard && (isApproved || (isEth && routeId > 0))) {
       getMoveTxData();
     }
   }, [isApproved, routeId, amountIn]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -191,6 +187,9 @@ const Home = () => {
     if (value >= 0) {
       setAmountIn(value);
       setAmountOut(value);
+    } else {
+      setAmountIn(0);
+      setAmountOut(0.0);
     }
   };
 
@@ -210,9 +209,10 @@ const Home = () => {
       const { data, to, from, value } = bridgeTx;
       console.log("bridge tx move:", bridgeTx);
       let dto: any = { data, to, from };
-      if (asset?.toString() === Asset.eth.toString()) {
+      if (isEth) {
         dto.value = value;
       }
+
       const tx = await signer.sendTransaction(dto);
       setInProgress(true);
       setTxHash(tx.hash);
@@ -220,14 +220,7 @@ const Home = () => {
       console.log("Move tx", tx);
       const receipt = await tx.wait();
       if (receipt.logs) {
-        setInProgress(false);
-        setChainTo(0);
-        setChainFrom(0);
-        setAmountOut(0.0);
-        setAmountIn(0);
-        setAsset(0);
-        setIsApproved(false);
-        setRouteId(undefined);
+        onReset();
         console.log("Move receipt logs", receipt.logs);
       }
     } catch (e: any) {
@@ -271,7 +264,7 @@ const Home = () => {
           <SendWrapper>
             <AssetSelect
               selectedTokenId={asset}
-              tokens={tokens!}
+              tokens={tokens}
               onSelectAsset={handleSelectAsset}
               isLoading={inProgress}
             />
@@ -290,8 +283,8 @@ const Home = () => {
               <TransferChainSelects
                 chainsFrom={chainsFrom}
                 chainsTo={chainsTo}
-                chainFrom={chainFrom!}
-                chainTo={chainTo!}
+                chainFrom={chainFrom}
+                chainTo={chainTo}
                 onSelectChainFrom={handleSelectChainFrom}
                 onSelectChainTo={handleSelectChainTo}
                 isDisabled={inProgress}
@@ -316,9 +309,9 @@ const Home = () => {
                 isConnected={isConnected}
                 isApproved={isApproved}
                 inProgress={inProgress}
-                isRouteIdSelected={routeId! >= 0}
-                isEth={!!asset && asset?.toString() === Asset.eth.toString()}
-                amountIn={!!amountIn}
+                isRouteIdSelected={routeId > 0}
+                isEth={isEth}
+                isAmountSet={!!amountIn}
                 onWalletConnect={onConnectWallet}
                 onWalletApprove={onApproveWallet}
                 onMoveAssets={handleMoveAssets}
@@ -327,7 +320,8 @@ const Home = () => {
           </TransferWrapper>
           {isConnected && (
             <BridgeRoutes
-              selectedRouteId={routeId!}
+              isEth={isEth}
+              selectedRouteId={routeId}
               routes={bridgeRoutes}
               onClick={handleOnRouteClick}
             />

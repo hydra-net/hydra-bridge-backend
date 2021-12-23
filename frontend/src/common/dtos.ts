@@ -6,9 +6,9 @@ export interface BaseListResponseDto<T> {
 }
 
 
-export interface BaseResponseDto<T> {
+export interface BaseResponseDto {
   success: boolean;
-  result: T;
+  result: any;
 }
 
 export interface CheckAllowanceDto {
@@ -48,6 +48,7 @@ export interface BuildTxRequestDto {
 }
 
 export interface QuoteRequestDto {
+  recipient: string;
   fromAsset: number;
   fromChainId: number;
   toAsset: number;
@@ -91,7 +92,7 @@ export interface BridgeInfoDto {
 }
 
 export interface RouteFeeDto {
-  gasLimit: GasLimitDto[]
+  transactionCoastUsd: number
 }
 
 export interface GasLimitDto {

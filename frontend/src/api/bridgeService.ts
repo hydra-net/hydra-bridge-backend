@@ -1,9 +1,7 @@
 import {
   BaseResponseDto,
   BuildTxRequestDto,
-  BuildTxResponseDto,
   QuoteRequestDto,
-  QuoteResponseDto,
 } from "../common/dtos";
 import { fetchWrapper } from "../helpers/fetchWrapper";
 
@@ -12,19 +10,35 @@ const { REACT_APP_API_URL } = process.env;
 
 export const buildBridgeTx = async (
   dto: BuildTxRequestDto
-): Promise<BaseResponseDto<BuildTxResponseDto>> => {
-  const response: any = await fetchWrapper.get(
-    `${REACT_APP_API_URL}/bridge/build-tx?recipient=${dto.recipient}&fromAsset=${dto.fromAsset}&fromChainId=${dto.fromChainId}&toAsset=${dto.toAsset}&toChainId=${dto.toChainId}&amount=${dto.amount}&routeId=${dto.routeId}`
-  );
- 
-  return response.result.data;
+): Promise<BaseResponseDto> => {
+  try {
+    const response: any = await fetchWrapper.get(
+      `${REACT_APP_API_URL}/bridge/build-tx?recipient=${dto.recipient}&fromAsset=${dto.fromAsset}&fromChainId=${dto.fromChainId}&toAsset=${dto.toAsset}&toChainId=${dto.toChainId}&amount=${dto.amount}&routeId=${dto.routeId}`
+    );
+
+    return response.result.data;
+  } catch (e) {
+    console.log(e);
+    return {
+      success: false,
+      result: null,
+    };
+  }
 };
 
 export const getQuote = async (
   dto: QuoteRequestDto
-): Promise<BaseResponseDto<QuoteResponseDto>> => {
-  const response: any = await fetchWrapper.get(
-    `${REACT_APP_API_URL}/bridge/quote?fromAsset=${dto.fromAsset}&fromChainId=${dto.fromChainId}&toAsset=${dto.toAsset}&toChainId=${dto.toChainId}&amount=${dto.amount}`
-  );
-  return response.result.data;
+): Promise<BaseResponseDto> => {
+  try {
+    const response: any = await fetchWrapper.get(
+      `${REACT_APP_API_URL}/bridge/quote?recipient=${dto.recipient}&fromAsset=${dto.fromAsset}&fromChainId=${dto.fromChainId}&toAsset=${dto.toAsset}&toChainId=${dto.toChainId}&amount=${dto.amount}`
+    );
+    return response.result.data;
+  } catch (e) {
+    console.log(e);
+    return {
+      success: false,
+      result: null,
+    };
+  }
 };

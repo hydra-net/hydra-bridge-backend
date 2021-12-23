@@ -12,7 +12,7 @@ type Props = {
   isApproved?: boolean;
   isEth?: boolean
   isRouteIdSelected?: boolean;
-  amountIn?: boolean;
+  isAmountSet?: boolean;
   inProgress: boolean;
   onWalletConnect: () => void;
   onWalletApprove: () => void;
@@ -22,7 +22,7 @@ type Props = {
 const ActionButtons = ({
   isEth,
   isRouteIdSelected,
-  amountIn,
+  isAmountSet,
   isConnected,
   isApproved,
   inProgress,
@@ -32,7 +32,7 @@ const ActionButtons = ({
 }: Props) => {
   const theme = useTheme();
   const showSelectRoute = isConnected && !isRouteIdSelected;
-  const showApprove = isConnected && amountIn && isRouteIdSelected && !isApproved && !isEth;
+  const showApprove = isConnected && isAmountSet && isRouteIdSelected && !isApproved && !isEth;
   const showMoveAssets = isConnected && (isApproved || isEth) && isRouteIdSelected;
 
   return (

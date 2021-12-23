@@ -13,6 +13,7 @@ import {
 } from "../../common/dtos";
 import { parseUnits } from "ethers/lib/utils";
 import { getAllChains, getBridgeTokens } from "../../api/commonService";
+import { Asset } from "../../common/enums";
 require("dotenv").config();
 
 const {
@@ -23,6 +24,9 @@ const {
 } = process.env;
 
 const wallets = [{ walletName: "metamask", preferred: true }];
+
+export const CHAIN_FROM_DEFAULT = 5;
+export const CHAIN_TO_DEFAULT = 80001;
 
 let provider: any;
 
@@ -46,14 +50,21 @@ export default function useHome() {
   const [isErrorOpen, setIsErrorOpen] = useState<boolean>(false);
   const [inProgress, setInProgress] = useState<boolean>(false);
 
-  //tokens
+  //state
   const [tokens, setTokens] = useState<TokenResponseDto[]>([]);
   const [chains, setChains] = useState<ChainResponseDto[]>([]);
-  const [chainFrom, setChainFrom] = useState<number>(5);
-  const [chainTo, setChainTo] = useState<number>(80001);
+  const [chainFrom, setChainFrom] = useState<number>(CHAIN_FROM_DEFAULT);
+  const [chainTo, setChainTo] = useState<number>(CHAIN_TO_DEFAULT);
+  const [asset, setAsset] = useState<number>(0);
+  const [amountIn, setAmountIn] = useState<number>(0);
+  const [amountOut, setAmountOut] = useState<number>(0.0);
+  const [routeId, setRouteId] = useState<number>(0);
 
   //modal
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+
+  const token = tokens.find((t) => t.id === asset);
+  const isEth = token?.symbol.toString().toLowerCase() === Asset[Asset.eth];
 
   useEffect(() => {
     const onboard = Onboard({
@@ -124,19 +135,25 @@ export default function useHome() {
     tokenAddress: string
   ) => {
     try {
-      const { address } = onBoard?.getState()!;
-      const res = await checkAllowance(
-        chainId,
-        address,
-        REACT_APP_HYDRA_BRIDGE_CONTRACT!,
-        tokenAddress
-      );
-      const units = tokenAddress === REACT_APP_USDC_CONTRACT_GOERLI ? 6 : 18;
-      const parsedAmountToSpend = parseUnits(amountIn.toString(), units);
-      const amountToSpend = ethers.BigNumber.from(parsedAmountToSpend);
-      const amountAllowed = ethers.BigNumber.from(res.result?.value.toString());
-
-      setIsApproved(amountAllowed.gte(amountToSpend));
+      if (amountIn > 0) {
+        const { address } = onBoard?.getState()!;
+        const res = await checkAllowance(
+          chainId,
+          address,
+          REACT_APP_HYDRA_BRIDGE_CONTRACT!,
+          tokenAddress
+        );
+        if (res.success) {
+          const units =
+            tokenAddress === REACT_APP_USDC_CONTRACT_GOERLI ? 6 : 18;
+          const parsedAmountToSpend = parseUnits(amountIn.toString(), units);
+          const amountToSpend = ethers.BigNumber.from(parsedAmountToSpend);
+          const amountAllowed = ethers.BigNumber.from(
+            res.result?.value.toString()
+          );
+          setIsApproved(amountAllowed.gte(amountToSpend));
+        }
+      }
     } catch (e) {
       console.log(e);
       setError(e);
@@ -147,7 +164,9 @@ export default function useHome() {
   const onGetQuote = async (dto: QuoteRequestDto) => {
     try {
       const res = await getQuote(dto);
-      setBridgeRoutes(res.result ? res.result.routes : []);
+      if (res.success) {
+        setBridgeRoutes(res.result ? res.result.routes : []);
+      }
     } catch (e) {
       console.log(e);
       setError(e);
@@ -170,8 +189,10 @@ export default function useHome() {
           tokenAddress,
           amount
         );
-        console.log("Build approve data", res);
-        setBuildApproveTx(res.result);
+        if (res.success) {
+          console.log("Build approve data", res);
+          setBuildApproveTx(res.result);
+        }
       }
     } catch (e) {
       console.log(e);
@@ -208,13 +229,23 @@ export default function useHome() {
   const getBridgeTxData = async (dto: BuildTxRequestDto) => {
     try {
       const res = await buildBridgeTx(dto);
-      console.log("bridge tx data res", res.result);
-      setBridgeTx(res.result);
+      if (res.success) {
+        console.log("bridge tx data res", res.result);
+        setBridgeTx(res.result);
+      }
     } catch (e) {
       console.log(e);
       setError(e);
       setIsErrorOpen(true);
     }
+  };
+
+  const onReset = () => {
+    setInProgress(false);
+    setAmountOut(0.0);
+    setAmountIn(0);
+    setIsApproved(false);
+    setRouteId(0);
   };
 
   return {
@@ -223,17 +254,28 @@ export default function useHome() {
     onCheckAllowance,
     onBuildApproveTxData,
     onApproveWallet,
+    onReset,
     getBridgeTxData,
     setChainFrom,
     setChainTo,
+    setAsset,
+    setAmountIn,
+    setAmountOut,
+    setRouteId,
     setInProgress,
     setIsModalOpen,
     setIsErrorOpen,
     setTxHash,
     setError,
     setIsApproved,
+    token,
     chains,
     tokens,
+    asset,
+    amountIn,
+    amountOut,
+    routeId,
+    isEth,
     isConnected,
     isApproved,
     isErrorOpen,
