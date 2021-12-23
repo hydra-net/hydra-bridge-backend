@@ -2,7 +2,7 @@ import { BridgeId } from "./enums";
 
 export interface BaseListResponseDto<T> {
   success: boolean;
-  results: any[];
+  result: T[];
 }
 
 
@@ -56,15 +56,48 @@ export interface QuoteRequestDto {
 }
 
 export interface QuoteResponseDto {
-  fromAsset: string;
-  fromChainId: string;
-  toAsset: string;
-  toChainId: string;
-  amountIn: string;
-  amountOut: string;
+  fromAsset: TokenResponseDto;
+  fromChainId: number;
+  toAsset: TokenResponseDto;
+  toChainId: number;
+  routes: RouteDto[]
+  amount: string;
+}
+
+export interface RouteDto {
+  id: number;
   allowanceTarget: string;
   isApprovalRequired: boolean;
-  routeId: string;
+  bridgeRoute: BridgeRouteDto
+  fees: RouteFeeDto;
+}
+
+export interface BridgeRouteDto {
+  bridgeName: string
+  bridgeId: number
+  bridgeInfo: BridgeInfoDto
+  fromAsset: TokenResponseDto
+  fromChainId: number
+  toAsset: TokenResponseDto
+  toChainId: number
+  amountIn: string;
+  amountOut: string;
+}
+
+export interface BridgeInfoDto {
+  serviceTime: number;
+  displayName: string
+  isTestnet: boolean
+}
+
+export interface RouteFeeDto {
+  gasLimit: GasLimitDto[]
+}
+
+export interface GasLimitDto {
+ amount: string
+ assetAddress: string
+ chainId: number
 }
 
 export interface BuildTxResponseDto {
@@ -76,6 +109,7 @@ export interface BuildTxResponseDto {
 }
 
 export interface TokenResponseDto {
+  id: number;
   name: string;
   address: string;
   chainId: number;
