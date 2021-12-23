@@ -32,11 +32,17 @@ const StyledSelect = styled(Select)`
 `;
 
 type Props = {
+  selectedTokenId: number;
   isLoading?: boolean;
   tokens: TokenResponseDto[];
   onSelectAsset: (value: any) => void;
 };
-const AssetSelect = ({ tokens, onSelectAsset, isLoading,  }: Props) => {
+const AssetSelect = ({
+  selectedTokenId,
+  tokens,
+  onSelectAsset,
+  isLoading,
+}: Props) => {
   const customStyles: any = {
     control: (provided: CSSProperties, state: any) => ({
       ...provided,
@@ -44,19 +50,26 @@ const AssetSelect = ({ tokens, onSelectAsset, isLoading,  }: Props) => {
     }),
   };
 
+  const options = tokens.map((token: TokenResponseDto, index: number) => {
+    return {
+      label: token.symbol,
+      value: token.id,
+      icon: (
+        <Icon name={token.symbol.toLocaleLowerCase() as IconKeys} size="20px" />
+      ),
+    };
+  });
+
   return (
     <Root>
       <Container>
         <Label>Send</Label>
         <StyledSelect
           styles={customStyles}
-          options={tokens ? tokens.map((token: TokenResponseDto, index: number) => {
-            return {
-              label: token.symbol,
-              value: index.toString(),
-              icon: <Icon name={token.symbol.toLocaleLowerCase() as IconKeys} size="20px" />,
-            };
-          }) : []}
+          value={
+            options.find((option) => option.value === selectedTokenId) || null
+          }
+          options={options}
           placeholder={null}
           onChange={onSelectAsset}
           components={{ Option: IconOption, SingleValue: ValueOption }}
