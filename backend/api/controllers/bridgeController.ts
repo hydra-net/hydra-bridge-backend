@@ -3,10 +3,11 @@ import { handleResponse } from "../helpers/controllerHandler";
 import { buildTx, getQuote } from "../services/bridgeService";
 
 export const quote = async (req: Request, res: Response) => {
-  const { fromAsset, fromChainId, toAsset, toChainId, amount }: any = req.query;
+  const {  recipient,fromAsset, fromChainId, toAsset, toChainId, amount }: any = req.query;
   handleResponse(
     res,
     await getQuote({
+      recipient,
       fromAsset,
       fromChainId,
       toAsset,

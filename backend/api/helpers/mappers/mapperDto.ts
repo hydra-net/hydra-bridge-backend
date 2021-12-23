@@ -23,7 +23,8 @@ export const mapRouteToDto = (
   chainFromId: number,
   chainToId: number,
   amountIn: string,
-  amountOut: string
+  amountOut: string,
+  transactionCoast: number
 ): RouteDto => {
   return {
     id: route.id,
@@ -45,13 +46,7 @@ export const mapRouteToDto = (
       amountOut: amountOut, //TODO: add function to calculate amountOut
     },
     fees: {
-      gasLimit: [
-        {
-          amount: "0", //TODO:calculate gas limit amount
-          assetAddress: token.address,
-          chainId: chainFromId,
-        },
-      ],
+      transactionCoastUsd : transactionCoast
     },
   };
 };

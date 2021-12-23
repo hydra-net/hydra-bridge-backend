@@ -39,3 +39,14 @@ export const decodeParameter = (
   const web3 = new Web3(getProviderUrl());
   return data ? web3.eth.abi.decodeParameter(type, data) : undefined;
 };
+
+
+
+export const calculateTransactionCost = async (params : any) : Promise<string> => {
+  const web3 = new Web3(getProviderUrl());
+    const gasPrice = await web3.eth.getGasPrice();
+    const gasLimit = await web3.eth.estimateGas(params);
+    var transactionFee = Number.parseInt(gasPrice) * gasLimit;
+  return ethers.utils.formatEther(transactionFee);
+
+}

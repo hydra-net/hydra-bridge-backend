@@ -1,8 +1,6 @@
 import {
   BuildAllowanceRequestDto,
-  BuildAllowanceResponseDto,
   AllowanceRequestDto,
-  AllowanceResponseDto,
   ApiResponseDto,
   ServiceResponseDto,
 } from "../common/dtos";
@@ -11,7 +9,7 @@ import { ethers } from "ethers";
 import { erc20Abi } from "../common/abis/erc20Abi";
 import { Interface } from "@ethersproject/abi";
 import { parseUnits } from "ethers/lib/utils";
-import { isNotEmpty } from "../helpers/stringHelper";
+import { isEmpty } from "../helpers/stringHelper";
 import { consoleLogger, hydraLogger } from "../helpers/hydraLogger";
 import prisma from "../helpers/db";
 import {
@@ -53,10 +51,10 @@ export const getAllowance = async (dto: AllowanceRequestDto) => {
 
   try {
     if (
-      !isNotEmpty(dto.chainId) &&
-      !isNotEmpty(dto.owner) &&
-      !isNotEmpty(dto.spender) &&
-      !isNotEmpty(dto.tokenAddress)
+      isEmpty(dto.chainId) ||
+      isEmpty(dto.owner) ||
+      isEmpty(dto.spender) ||
+      isEmpty(dto.tokenAddress)
     ) {
       return BadRequest();
     }
@@ -109,11 +107,11 @@ export const buildTx = async (
 
   try {
     if (
-      !isNotEmpty(dto.chainId) &&
-      !isNotEmpty(dto.owner) &&
-      !isNotEmpty(dto.spender) &&
-      !isNotEmpty(dto.tokenAddress) &&
-      !isNotEmpty(dto.amount)
+      isEmpty(dto.chainId) ||
+      isEmpty(dto.owner) ||
+      isEmpty(dto.spender) ||
+      isEmpty(dto.tokenAddress) ||
+      isEmpty(dto.amount)
     ) {
       return BadRequest();
     }
@@ -144,7 +142,6 @@ export const buildTx = async (
     const parsedAmount = parseUnits(dto.amount, units);
     const amountToSpend = ethers.BigNumber.from(parsedAmount.toString());
     const amountAllowed = ethers.BigNumber.from(allwanceRes.toString());
-
     if (amountToSpend.gt(amountAllowed)) {
       const approveData = ERC20_INTERFACE.encodeFunctionData("approve", [
         dto.spender,
@@ -157,7 +154,6 @@ export const buildTx = async (
       };
       response.data = buildAllowanceResp;
     }
-
     return response;
   } catch (e) {
     consoleLogger.error(e);
