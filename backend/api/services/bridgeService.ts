@@ -1,156 +1,255 @@
 import {
-  BaseListResponseDto,
-  BaseResponseDto,
+  ApiResponseDto,
   BuildTxRequestDto,
   BuildTxResponseDto,
   QuoteRequestDto,
   QuoteResponseDto,
+  RouteDto,
+  ServiceResponseDto,
 } from "../common/dtos";
-import { Asset, BridgeId, ChainId, RouteId } from "../common/enums";
+import { Asset, BridgeId } from "../common/enums";
 import { encodeParameter } from "../helpers/web3";
 import { Interface } from "@ethersproject/abi";
-import { getContractFromAsset } from "../helpers/assetHelper";
 import { BigNumber, ethers } from "ethers";
 import { hydraBridge } from "./contractInterfaces/contractInterfaces";
 import { getTimestamp } from "../helpers/time";
-import { getChainFromId } from "../helpers/chainHelper";
 import { parseUnits } from "ethers/lib/utils";
 import { isNotEmpty } from "../helpers/stringHelper";
 import { consoleLogger, hydraLogger } from "../helpers/hydraLogger";
+import {
+  BadRequest,
+  NotFound,
+  ServerError,
+} from "../helpers/serviceErrorHelper";
+import prisma from "../helpers/db";
+import { mapRouteToDto, mapTokenToDto } from "../helpers/mappers/mapperDto";
 
 require("dotenv").config();
 const { ETH_CONTRACT, HOP_RELAYER, HOP_RELAYER_FEE } = process.env;
+var environment = process.env.NODE_ENV || "dev";
 
 const HYDRA_BRIDGE_INTERFACE = new Interface(hydraBridge);
 
 export const getQuote = async (
   dto: QuoteRequestDto
-): Promise<BaseListResponseDto<QuoteResponseDto>> => {
-  let response: BaseListResponseDto<QuoteResponseDto> = {
+): Promise<ServiceResponseDto> => {
+  let quoteResp: ApiResponseDto = {
     success: true,
-    results: [],
+    result: null,
   };
 
-  const quotes: QuoteResponseDto[] = [];
+  let response: ServiceResponseDto = {
+    status: 200,
+    data: null,
+  };
+
   if (
-    isNotEmpty(dto.fromAsset) &&
-    isNotEmpty(dto.fromChainId) &&
-    isNotEmpty(dto.toAsset) &&
-    isNotEmpty(dto.toChainId) &&
-    isNotEmpty(dto.amount)
+    !isNotEmpty(dto.fromAsset) &&
+    !isNotEmpty(dto.fromChainId) &&
+    !isNotEmpty(dto.toAsset) &&
+    !isNotEmpty(dto.toChainId) &&
+    !isNotEmpty(dto.amount)
   ) {
-    if (
-      Asset[dto.fromAsset] === Asset[dto.toAsset] &&
-      ChainId[dto.fromChainId] !== ChainId[dto.toChainId]
-    ) {
-      try {
-        const isApprovalRequired =
-          Asset[dto.fromAsset.toString()] !== Asset.eth ? true : false;
-        const polygonRoute: QuoteResponseDto = {
-          routeId: RouteId.polygon,
-          amountIn: dto.amount,
-          amountOut: dto.amount,
-          isApprovalRequired: isApprovalRequired,
-          allowanceTarget: getContractFromAsset(dto.fromAsset),
-          fromAsset: Asset[dto.fromAsset],
-          toAsset: Asset[dto.toAsset],
-          fromChainId: ChainId[dto.fromChainId],
-          toChainId: ChainId[dto.toChainId],
-        };
-        quotes.push(polygonRoute);
-
-        if (dto.fromAsset.toString() !== Asset.eth.toString()) {
-          const hopRoute: QuoteResponseDto = {
-            routeId: RouteId.hop,
-            amountIn: dto.amount,
-            amountOut: dto.amount,
-            isApprovalRequired: isApprovalRequired,
-            allowanceTarget: getContractFromAsset(dto.fromAsset),
-            fromAsset: Asset[dto.fromAsset],
-            toAsset: Asset[dto.toAsset],
-            fromChainId: ChainId[dto.fromChainId],
-            toChainId: ChainId[dto.toChainId],
-          };
-          quotes.push(hopRoute);
-        }
-
-        response.results = quotes;
-      } catch (e) {
-        consoleLogger.error(e);
-        hydraLogger.error(e);
-        return e;
-      }
-    }
+    return BadRequest();
   }
-  return response;
-};
 
-export const buildTx = async (
-  dto: BuildTxRequestDto
-): Promise<BaseResponseDto<BuildTxResponseDto>> => {
-  let response: BaseResponseDto<BuildTxResponseDto> = {
-    success: true,
-    result: { data: "", to: "", from: "" },
-  };
   try {
-    if (
-      isNotEmpty(dto.fromAsset) &&
-      isNotEmpty(dto.fromChainId) &&
-      isNotEmpty(dto.toAsset) &&
-      isNotEmpty(dto.toChainId) &&
-      isNotEmpty(dto.amount) &&
-      isNotEmpty(dto.recipient)
-    ) {
-      if (dto.fromAsset === dto.toAsset && dto.fromChainId !== dto.toChainId) {
-        if (dto.routeId === RouteId.polygon.toString()) {
-          response.result = getPolygonRoute(dto);
-        }
+    const token = await prisma.token.findFirst({
+      where: {
+        id: Number.parseInt(dto.fromAsset),
+      },
+    });
 
-        if (dto.routeId === RouteId.hop.toString()) {
-          response.result = getHopRoute(dto);
-        }
-      }
+    const chainFrom = await prisma.chain.findFirst({
+      where: {
+        chainId: Number.parseInt(dto.fromChainId),
+      },
+    });
+
+    const chainTo = await prisma.chain.findFirst({
+      where: {
+        chainId: Number.parseInt(dto.toChainId),
+      },
+    });
+
+    if (!token || !chainFrom || !chainTo) {
+      response.data = quoteResp;
+      return response;
+      // return NotFound();
     }
 
+    if (chainFrom.id === chainTo.id) {
+      return BadRequest("Pick different chains");
+    }
+
+    const bridges = await prisma.bridge.findMany({
+      where: {
+        is_testnet: environment === "dev" ? true : false,
+      },
+    });
+
+    const bridgeIds = bridges.map((bridge) => bridge.id);
+
+    const dbRoutes = await prisma.route.findMany({
+      where: {
+        chain_from_id: chainFrom.id,
+        chain_to_id: chainTo.id,
+        bridge_id: { in: bridgeIds },
+      },
+    });
+
+    const routes: RouteDto[] = [];
+    for (const route of dbRoutes) {
+      const bridge = bridges.find((br) => br.id === route.bridge_id);
+      const routeDto = mapRouteToDto(
+        route,
+        ETH_CONTRACT,
+        bridge,
+        mapTokenToDto(token, chainFrom.id),
+        chainFrom.id,
+        chainTo.id,
+        dto.amount,
+        dto.amount
+      );
+      routes.push(routeDto);
+    }
+    const quoteResponse: QuoteResponseDto = {
+      fromAsset: mapTokenToDto(token, chainFrom.id),
+      fromChainId: chainFrom.id,
+      toAsset: mapTokenToDto(token, chainTo.id),
+      toChainId: chainTo.id,
+      routes: routes,
+      amount: dto.amount,
+    };
+
+    quoteResp.result = quoteResponse;
+    response.data = quoteResp;
     return response;
   } catch (e) {
     consoleLogger.error(e);
     hydraLogger.error(e);
-    return e;
+    return ServerError();
   }
 };
 
-const getPolygonRoute = (dto: BuildTxRequestDto): BuildTxResponseDto => {
-  if (
-    dto.fromAsset === Asset.usdc.toString() &&
-    dto.toAsset === Asset.usdc.toString()
-  ) {
-    const units = dto.fromAsset === Asset.usdc.toString() ? 6 : 18;
+export const buildTx = async (
+  dto: BuildTxRequestDto
+): Promise<ServiceResponseDto> => {
+  let buildResp: ApiResponseDto = {
+    success: true,
+    result: { data: "", to: "", from: "" },
+  };
+
+  let response: ServiceResponseDto = {
+    status: 200,
+    data: null,
+  };
+
+  try {
+    if (
+      !isNotEmpty(dto.fromAsset) &&
+      !isNotEmpty(dto.fromChainId) &&
+      !isNotEmpty(dto.toAsset) &&
+      !isNotEmpty(dto.toChainId) &&
+      !isNotEmpty(dto.amount) &&
+      !isNotEmpty(dto.recipient)
+    ) {
+      return BadRequest();
+    }
+    if (dto.fromAsset !== dto.toAsset && dto.fromChainId === dto.toChainId) {
+      return BadRequest();
+    }
+    const token = await prisma.token.findFirst({
+      where: {
+        id: Number.parseInt(dto.fromAsset),
+      },
+    });
+
+    const chainFrom = await prisma.chain.findFirst({
+      where: {
+        chainId: Number.parseInt(dto.fromChainId),
+      },
+    });
+
+    const chainTo = await prisma.chain.findFirst({
+      where: {
+        chainId: Number.parseInt(dto.toChainId),
+      },
+    });
+
+    if (!token || !chainFrom || !chainTo) {
+      return NotFound();
+    }
+
+    const route = await prisma.route.findFirst({
+      where: {
+        id: Number.parseInt(dto.routeId),
+        chain_from_id: chainFrom.id,
+        chain_to_id: chainTo.id,
+      },
+      include: {
+        bridge: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    });
+
+    if (!route) {
+      return NotFound();
+    }
+
+    if (
+      route.bridge.name === "polygon-bridge" ||
+      route.bridge.name === "polygon-bridge-goerli"
+    ) {
+      buildResp.result = await getPolygonRoute(dto);
+      response.data = buildResp;
+      return response;
+    }
+
+    if (
+      route.bridge.name === "hop-bridge" ||
+      route.bridge.name === "hop-bridge-goerli"
+    ) {
+      buildResp.result = await getHopRoute(dto);
+      response.data = buildResp;
+      return response;
+    }
+  } catch (e) {
+    consoleLogger.error(e);
+    hydraLogger.error(e);
+    return ServerError();
+  }
+};
+
+const getPolygonRoute = async (
+  dto: BuildTxRequestDto
+): Promise<BuildTxResponseDto> => {
+  const token = await prisma.token.findFirst({
+    where: {
+      id: Number.parseInt(dto.fromAsset),
+    },
+  });
+  if (token.symbol.toLowerCase() === Asset[Asset.usdc]) {
+    const units = token.symbol.toLowerCase() === Asset[Asset.usdc] ? 6 : 18;
     const parsedAmount = parseUnits(dto.amount, units);
     const bigAmountIn = BigNumber.from(parsedAmount).toString();
     const depositData = encodeParameter("uint256", bigAmountIn);
     const sendToPolygonData = HYDRA_BRIDGE_INTERFACE.encodeFunctionData(
       "sendToPolygon",
-      [
-        dto.recipient,
-        getContractFromAsset(dto.fromAsset),
-        bigAmountIn,
-        depositData,
-      ]
+      [dto.recipient, token.address, bigAmountIn, depositData]
     );
-
+ 
     return {
       data: sendToPolygonData,
       to: ETH_CONTRACT,
-      from: dto.recipient,
-      bridgeId: BridgeId.polygon,
-    };
+      from: dto.recipient
+    };;
   }
 
-  if (
-    dto.fromAsset === Asset.eth.toString() &&
-    dto.toAsset === Asset.eth.toString()
-  ) {
+  if (token.symbol.toLowerCase() === Asset[Asset.usdc]) {
     const sendEthToPolygonData = HYDRA_BRIDGE_INTERFACE.encodeFunctionData(
       "sendEthToPolygon",
       [dto.recipient]
@@ -161,7 +260,6 @@ const getPolygonRoute = (dto: BuildTxRequestDto): BuildTxResponseDto => {
       to: ETH_CONTRACT,
       from: dto.recipient,
       value: ethers.utils.parseEther(dto.amount).toHexString(),
-      bridgeId: BridgeId.polygon,
     };
   }
 
@@ -172,20 +270,29 @@ const getPolygonRoute = (dto: BuildTxRequestDto): BuildTxResponseDto => {
   };
 };
 
-const getHopRoute = (dto: BuildTxRequestDto): BuildTxResponseDto => {
-  if (
-    dto.fromAsset === Asset.usdc.toString() &&
-    dto.toAsset === Asset.usdc.toString()
-  ) {
-    const units = dto.fromAsset === Asset.usdc.toString() ? 6 : 18;
+const getHopRoute = async (
+  dto: BuildTxRequestDto
+): Promise<BuildTxResponseDto> => {
+  const token = await prisma.token.findFirst({
+    where: {
+      id: Number.parseInt(dto.fromAsset),
+    },
+  });
+  const chain = await prisma.chain.findFirst({
+    where: {
+      id: Number.parseInt(dto.toChainId),
+    },
+  });
+  if (token.symbol.toLowerCase() === Asset[Asset.usdc]) {
+    const units = token.symbol.toLowerCase() === Asset[Asset.usdc] ? 6 : 18;
     const parsedAmount = parseUnits(dto.amount, units);
     const bigAmountIn = BigNumber.from(parsedAmount).toString();
     const sendToL2HopData = HYDRA_BRIDGE_INTERFACE.encodeFunctionData(
       "sendToL2Hop",
       [
-        getContractFromAsset(dto.fromAsset),
+        token.address,
         dto.recipient,
-        getChainFromId(dto.toChainId),
+        chain.chainId,
         bigAmountIn,
         0,
         getTimestamp(30),
@@ -197,8 +304,7 @@ const getHopRoute = (dto: BuildTxRequestDto): BuildTxResponseDto => {
     return {
       data: sendToL2HopData,
       to: ETH_CONTRACT,
-      from: dto.recipient,
-      bridgeId: BridgeId.hop,
+      from: dto.recipient
     };
   }
 
