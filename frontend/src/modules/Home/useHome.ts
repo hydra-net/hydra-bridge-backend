@@ -8,6 +8,7 @@ import {
   BuildTxRequestDto,
   ChainResponseDto,
   QuoteRequestDto,
+  RouteDto,
   TokenResponseDto,
 } from "../../common/dtos";
 import { parseUnits } from "ethers/lib/utils";
@@ -31,7 +32,7 @@ export default function useHome() {
   const [onBoard, setOnboard] = useState<API | null>();
 
   //transaction actions
-  const [bridgeRoutes, setBridgeRoutes] = useState<any>();
+  const [bridgeRoutes, setBridgeRoutes] = useState<RouteDto[]>([]);
   const [buildApproveTx, setBuildApproveTx] = useState<any>();
   const [bridgeTx, setBridgeTx] = useState<any>();
   const [txHash, setTxHash] = useState<string>();
@@ -86,9 +87,9 @@ export default function useHome() {
   useEffect(() => {
     async function getTokens() {
       setInProgress(true);
-      const result = await getBridgeTokens(chainFrom);
-      if (result && result.success) {
-        setTokens(result.results);
+      const res = await getBridgeTokens(chainFrom);
+      if (res && res.success) {
+        setTokens(res.result);
       }
 
       setInProgress(false);
@@ -99,9 +100,9 @@ export default function useHome() {
   useEffect(() => {
     async function getChains() {
       setInProgress(true);
-      const result = await getAllChains();
-      if (result && result.success) {
-        setChains(result.results);
+      const res = await getAllChains();
+      if (res && res.success) {
+        setChains(res.result);
       }
       setInProgress(false);
     }
@@ -119,7 +120,7 @@ export default function useHome() {
 
   const onCheckAllowance = async (
     amountIn: number,
-    chainId: string,
+    chainId: number,
     tokenAddress: string
   ) => {
     try {
@@ -146,7 +147,7 @@ export default function useHome() {
   const onGetQuote = async (dto: QuoteRequestDto) => {
     try {
       const res = await getQuote(dto);
-      setBridgeRoutes(res.results);
+      setBridgeRoutes(res.result ? res.result.routes : []);
     } catch (e) {
       console.log(e);
       setError(e);
@@ -155,9 +156,9 @@ export default function useHome() {
   };
 
   const onBuildApproveTxData = async (
-    chainId: string,
+    chainId: number,
     tokenAddress: string,
-    amount: string
+    amount: number
   ) => {
     try {
       const { address } = onBoard?.getState()!;
@@ -169,7 +170,7 @@ export default function useHome() {
           tokenAddress,
           amount
         );
-        console.log("Build approve data", res.result);
+        console.log("Build approve data", res);
         setBuildApproveTx(res.result);
       }
     } catch (e) {
@@ -207,7 +208,7 @@ export default function useHome() {
   const getBridgeTxData = async (dto: BuildTxRequestDto) => {
     try {
       const res = await buildBridgeTx(dto);
-      console.log("bridge tx data res", res);
+      console.log("bridge tx data res", res.result);
       setBridgeTx(res.result);
     } catch (e) {
       console.log(e);
