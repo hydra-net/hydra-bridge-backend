@@ -1,6 +1,5 @@
 import styled, { useTheme } from "styled-components";
-import { QuoteResponseDto } from "../../dtos";
-import { Asset, RouteId } from "../../enums";
+import { RouteDto } from "../../dtos";
 import {
   getFlexCenter,
   getFlexStart,
@@ -8,7 +7,8 @@ import {
   getVerticalGap,
 } from "../../styles";
 import Icon from "../Icon/Icon";
-import hop from "../../../assets/hop.png";
+import { IconKeys } from "../../commonTypes";
+import { getBridgeIconName } from "../../../helpers/bridgeHelper";
 
 const Root = styled.div`
   margin-top: 10px;
@@ -71,12 +71,6 @@ const AmountStyled = styled.div<{ isSelected?: boolean }>`
   font-size: ${({ theme }) => theme.heading.xs};
 `;
 
-const StyledHop = styled.img`
-  height: 24px;
-  width: 24px;
-  border-radius: 100%;
-`;
-
 const BridgeIconContainer = styled.div`
   display: flex;
   flex-direction: row;
@@ -90,13 +84,13 @@ const BridgeNameStyled = styled.div`
 `;
 
 type Props = {
-  routes: QuoteResponseDto[];
+  routes: RouteDto[];
   selectedRouteId?: number;
   onClick: (routeId: number) => void;
 };
 const BridgeRoutes = ({ routes, selectedRouteId, onClick }: Props) => {
   const theme = useTheme();
-  if (!routes) {
+  if (!routes || routes.length === 0) {
     return null;
   }
 
@@ -106,59 +100,50 @@ const BridgeRoutes = ({ routes, selectedRouteId, onClick }: Props) => {
         <Title>Available routes:</Title>
       </TitleContainer>
       <Container>
-        {routes.map((route: QuoteResponseDto) => {
-          const isSelected =
-            selectedRouteId?.toString() === route.routeId.toString();
+        {routes.map((route: RouteDto) => {
+          const assetIconName =
+            route.bridgeRoute.fromAsset.symbol.toLocaleLowerCase() as IconKeys;
+          const isSelected = selectedRouteId === route.id;
 
           return (
             <Route
-              key={route.routeId}
+              key={route.id}
               isSelected={isSelected}
-              onClick={() => onClick(parseInt(route.routeId))}
+              onClick={() => onClick(route.id)}
             >
               <RouteContent>
                 <AmountContainer>
                   <div>
-                    <Icon
-                      name={
-                        route.fromAsset === Asset[Asset.usdc]
-                          ? "usdc"
-                          : "eth"
-                      }
-                    />
+                    <Icon name={assetIconName} />
                   </div>
-                  <AmountStyled>{route.amountIn}</AmountStyled>
+                  <AmountStyled>{route.bridgeRoute.amountIn}</AmountStyled>
                 </AmountContainer>
                 <Icon
                   name="arrowRight"
                   color={isSelected ? theme.primaryColor : theme.secondaryColor}
                 />
-                <div>
-                  {route.routeId.toString() === RouteId.polygon.toString() ? (
-                    <BridgeIconContainer>
-                      <Icon name="polygon" />
-                      <BridgeNameStyled>Polygon POS bridge</BridgeNameStyled>
-                    </BridgeIconContainer>
-                  ) : (
-                    <BridgeIconContainer>
-                      <StyledHop src={hop} />
-                      <BridgeNameStyled>Hop bridge</BridgeNameStyled>
-                    </BridgeIconContainer>
-                  )}
-                </div>
+                <BridgeIconContainer>
+                  <Icon
+                    height="24px"
+                    width="24px"
+                    name={
+                      getBridgeIconName(
+                        route.bridgeRoute.bridgeName
+                      ) as IconKeys
+                    }
+                  />
+                  <BridgeNameStyled>
+                    {route.bridgeRoute.bridgeInfo.displayName}
+                  </BridgeNameStyled>
+                </BridgeIconContainer>
+
                 <Icon name="arrowRight" />
                 <AmountContainer>
                   <div>
-                    <Icon
-                      name={
-                        route.fromAsset === Asset[Asset.usdc]
-                          ? "usdc"
-                          : "eth"
-                      }
-                    />
+                    <Icon name={assetIconName} />
                   </div>
                   <AmountStyled isSelected={isSelected}>
-                    {route.amountOut}
+                    {route.bridgeRoute.amountOut}
                   </AmountStyled>
                 </AmountContainer>
               </RouteContent>
