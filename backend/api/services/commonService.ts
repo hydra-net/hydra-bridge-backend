@@ -1,18 +1,25 @@
 import {
-  BaseListResponseDto,
+  ApiResponseDto,
   ChainResponseDto,
+  ServiceResponseDto,
   TokenResponseDto,
 } from "../common/dtos";
 import prisma from "../helpers/db";
 import { consoleLogger, hydraLogger } from "../helpers/hydraLogger";
-
+import { mapTokenToDto } from "../helpers/mappers/mapperDto";
+import { ServerError } from "../helpers/serviceErrorHelper";
 require("dotenv").config();
-var environment = process.env.NODE_ENV || 'dev';
 
-export const getTokens = async (chainId: string) => {
-  let response: BaseListResponseDto<TokenResponseDto> = {
+
+export const getTokens = async (chainId: string) : Promise<ServiceResponseDto> => {
+  let response: ServiceResponseDto = {
+    status: 200,
+    data: null,
+  };
+
+  let apiResponse: ApiResponseDto = {
     success: true,
-    results: [],
+    result: [],
   };
 
   try {
@@ -31,6 +38,7 @@ export const getTokens = async (chainId: string) => {
         include: {
           token: {
             select: {
+              id: true,
               name: true,
               address: true,
               decimals: true,
@@ -39,6 +47,7 @@ export const getTokens = async (chainId: string) => {
           },
           chain: {
             select: {
+              id: true,
               chainId: true,
             },
           },
@@ -47,39 +56,37 @@ export const getTokens = async (chainId: string) => {
       const tokens: TokenResponseDto[] = [];
       for (let i = 0; i < chainTokens.length; i++) {
         const item = chainTokens[i];
-        const dto: TokenResponseDto = {
-          name: item.token.name,
-          chainId: item.chain.chainId,
-          address: item.token.address,
-          decimals: item.token.decimals,
-          symbol: item.token.symbol,
-        };
+        const dto: TokenResponseDto = mapTokenToDto(item.token, item.chain.id);
         tokens.push(dto);
       }
-      response.results = tokens;
+      apiResponse.result = tokens;
+      response.data = apiResponse;
+      return response;
     }
-    return response;
   } catch (e) {
     consoleLogger.error(e);
-    hydraLogger.error(e)
-    return response;
+    hydraLogger.error(e);
+    return ServerError();
   }
 };
 
-export const getChains = async () => {
-  let response: BaseListResponseDto<ChainResponseDto> = {
+export const getChains = async () : Promise<ServiceResponseDto> => {
+  let response: ServiceResponseDto = {
+    status: 200,
+    data: null,
+  };
+
+  let apiResponse: ApiResponseDto = {
     success: true,
-    results: [],
+    result: [],
   };
 
   try {
     const chains = await prisma.chain.findMany({
-      where: {
-        is_testnet: environment === "dev" ? true : false,
-      },
       include: {
         token: {
           select: {
+            id: true,
             name: true,
             address: true,
             decimals: true,
@@ -101,6 +108,7 @@ export const getChains = async () => {
           isReceivingEnabled: item.is_receiving_enabled,
           isSendingEnabled: item.is_sending_enabled,
           currency: {
+            id: item.token.id,
             name: item.token.name,
             chainId: item.chainId,
             address: item.token.address,
@@ -111,12 +119,14 @@ export const getChains = async () => {
         };
         chainsResponse.push(dto);
       }
-      response.results = chainsResponse;
+      apiResponse.result = chainsResponse;
+      response.data = apiResponse;
     }
+
     return response;
   } catch (e) {
     consoleLogger.error(e);
-    hydraLogger.error(e)
-    return e;
+    hydraLogger.error(e);
+    return ServerError();
   }
 };
