@@ -9,7 +9,7 @@ require("dotenv").config();
 const { REACT_APP_API_URL } = process.env;
 
 export const checkAllowance = async (
-  chainId: string,
+  chainId: number,
   owner: string,
   spender: string,
   tokenAddress: string
@@ -17,15 +17,16 @@ export const checkAllowance = async (
   const response: any = await fetchWrapper.get(
     `${REACT_APP_API_URL}/approval/check-allowance?chainId=${chainId}&owner=${owner}&spender=${spender}&tokenAddress=${tokenAddress}`
   );
+
   return response.result.data;
 };
 
 export const buildApprovalTx = async (
-  chainId: string,
+  chainId: number,
   owner: string,
   spender: string,
   tokenAddress: string,
-  amount: string
+  amount: number
 ): Promise<BaseResponseDto<BuildAllowanceResponseDto>> => {
   const response: any =
     await fetchWrapper.get(
