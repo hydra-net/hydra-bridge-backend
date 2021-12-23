@@ -52,7 +52,15 @@ export interface BuildTxRequestDto {
   routeId: string;
 }
 
+export interface GetTxRequestDto {
+  recipient: string
+  tokenSymbol: string
+  tokenAddress: string
+  amount: string;
+}
+
 export interface QuoteRequestDto {
+  recipient: string;
   fromAsset: string;
   fromChainId: string;
   toAsset: string;
@@ -96,7 +104,7 @@ export interface BridgeInfoDto {
 }
 
 export interface RouteFeeDto {
-  gasLimit: GasLimitDto[]
+  transactionCoastUsd: number
 }
 
 export interface GasLimitDto {
