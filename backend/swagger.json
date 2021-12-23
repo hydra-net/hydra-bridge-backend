@@ -24,8 +24,7 @@
             "name": "chainId",
             "in": "query",
             "description": "Chain id to bridge",
-            "required": "true",
-            "enum": ["goerli", "polygonMumbai"]
+            "required": "true"
           },
           {
             "name": "owner",
@@ -52,6 +51,36 @@
             "schema": {
               "$ref": "#/definitions/AllowanceDto"
             }
+          },
+          "400": {
+            "description": "Client Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorDto"
+                }
+              }
+            }
           }
         }
       }
@@ -65,8 +94,7 @@
             "name": "chainId",
             "in": "query",
             "description": "Chain id to bridge",
-            "required": "true",
-            "enum": ["goerli", "polygonMumbai"]
+            "required": "true"
           },
           {
             "name": "owner",
@@ -99,6 +127,36 @@
             "schema": {
               "$ref": "#/definitions/BuildAllowanceResponseDto"
             }
+          },
+          "400": {
+            "description": "Client Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorDto"
+                }
+              }
+            }
           }
         }
       }
@@ -118,29 +176,25 @@
             "name": "fromAsset",
             "in": "query",
             "description": "Asset from who we bridge",
-            "required": "true",
-            "enum": ["eth", "usdc"]
+            "required": "true"
           },
           {
             "name": "fromChainId",
             "in": "query",
             "description": "Chain from who we bridge",
-            "required": "true",
-            "enum": ["goerli", "polygonMumbai"]
+            "required": "true"
           },
           {
             "name": "toAsset",
             "in": "query",
             "description": "Asset to who we bridge",
-            "required": "true",
-            "enum": ["eth", "usdc"]
+            "required": "true"
           },
           {
             "name": "toChainId",
             "in": "query",
             "description": "Chain to who we bridge",
-            "required": "true",
-            "enum": ["goerli", "polygonMumbai"]
+            "required": "true"
           },
           {
             "name": "amount",
@@ -152,8 +206,7 @@
             "name": "routeId",
             "in": "query",
             "description": "ID of transfer route",
-            "required": "true",
-            "enum": ["polygon", "hop"]
+            "required": "true"
           }
         ],
         "responses": {
@@ -161,6 +214,36 @@
             "description": "OK",
             "schema": {
               "$ref": "#/definitions/BuildTxResponseDto"
+            }
+          },
+          "400": {
+            "description": "Client Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorDto"
+                }
+              }
             }
           }
         }
@@ -175,29 +258,25 @@
             "name": "fromAsset",
             "in": "query",
             "description": "Asset from who we bridge",
-            "required": "true",
-            "enum": ["eth", "usdc"]
+            "required": "true"
           },
           {
             "name": "fromChainId",
             "in": "query",
             "description": "Chain from who we bridge",
-            "required": "true",
-            "enum": ["goerli", "polygonMumbai"]
+            "required": "true"
           },
           {
             "name": "toAsset",
             "in": "query",
             "description": "Asset to who we bridge",
-            "required": "true",
-            "enum": ["eth", "usdc"]
+            "required": "true"
           },
           {
             "name": "toChainId",
             "in": "query",
             "description": "Chain to who we bridge",
-            "required": "true",
-            "enum": ["goerli", "polygonMumbai"]
+            "required": "true"
           },
           {
             "name": "amount",
@@ -213,6 +292,36 @@
               "type": "array",
               "items": {
                 "$ref": "#/definitions/QuotesDto"
+              }
+            }
+          },
+          "400": {
+            "description": "Client Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorDto"
+                }
               }
             }
           }
@@ -237,6 +346,36 @@
             "schema": {
               "$ref": "#/definitions/TokensResponseDto"
             }
+          },
+          "400": {
+            "description": "Client Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorDto"
+                }
+              }
+            }
           }
         }
       }
@@ -251,12 +390,52 @@
             "schema": {
               "$ref": "#/definitions/ChainsResponseDto"
             }
+          },
+          "400": {
+            "description": "Client Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorDto"
+                }
+              }
+            }
           }
         }
       }
     }
   },
   "definitions": {
+    "ErrorDto": {
+      "properties": {
+        "status": {
+          "type": "number"
+        },
+        "message": {
+          "type": "string"
+        }
+      }
+    },
     "AllowanceDto": {
       "properties": {
         "value": {
