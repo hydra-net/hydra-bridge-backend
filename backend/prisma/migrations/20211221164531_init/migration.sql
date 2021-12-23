@@ -44,6 +44,7 @@ CREATE TABLE "Bridge" (
     "updated_at" TIMESTAMP(3) NOT NULL,
     "name" VARCHAR(255) NOT NULL,
     "display_name" VARCHAR(255) NOT NULL,
+    "is_testnet" BOOLEAN NOT NULL DEFAULT false,
 
     CONSTRAINT "Bridge_pkey" PRIMARY KEY ("id")
 );
@@ -65,6 +66,7 @@ CREATE TABLE "Route" (
     "is_claimable" BOOLEAN NOT NULL DEFAULT false,
     "chain_from_id" INTEGER NOT NULL,
     "chain_to_id" INTEGER NOT NULL,
+    "bridge_id" INTEGER NOT NULL,
 
     CONSTRAINT "Route_pkey" PRIMARY KEY ("id")
 );
@@ -92,3 +94,6 @@ ALTER TABLE "Route" ADD CONSTRAINT "Route_chain_from_id_fkey" FOREIGN KEY ("chai
 
 -- AddForeignKey
 ALTER TABLE "Route" ADD CONSTRAINT "Route_chain_to_id_fkey" FOREIGN KEY ("chain_to_id") REFERENCES "Chain"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Route" ADD CONSTRAINT "Route_bridge_id_fkey" FOREIGN KEY ("bridge_id") REFERENCES "Bridge"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

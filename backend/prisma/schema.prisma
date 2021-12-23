@@ -55,7 +55,9 @@ model Bridge {
   updated_at   DateTime          @updatedAt
   name         String            @db.VarChar(255)
   display_name String            @db.VarChar(255)
+  is_testnet   Boolean          @default(false)
   tokens       BridgesOnTokens[]
+  routes       Route[]
 }
 
 model BridgesOnTokens {
@@ -75,4 +77,6 @@ model Route {
   chain_from_id Int
   chain_to      Chain    @relation("chain_to", fields: [chain_to_id], references: [id])
   chain_to_id   Int
+  bridge        Bridge    @relation(fields: [bridge_id], references: [id])
+  bridge_id   Int
 }
