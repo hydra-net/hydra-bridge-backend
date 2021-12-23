@@ -1,46 +1,30 @@
-import { Request, Response, NextFunction } from "express";
-import createError from "http-errors";
+import { Request, Response } from "express";
+import { handleResponse } from "../helpers/controllerHandler";
 import { buildTx, getAllowance } from "../services/allowanceService";
 
-export const checkAllowance = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const { chainId, owner, spender, tokenAddress }: any = req.query;
-    const result = await getAllowance({
+export const checkAllowance = async (req: Request, res: Response) => {
+  const { chainId, owner, spender, tokenAddress }: any = req.query;
+  handleResponse(
+    res,
+    await getAllowance({
       chainId,
       owner,
       spender,
       tokenAddress,
-    });
-    res.status(200).json({
-      data: result,
-    });
-  } catch (e) {
-    next(createError(e.statusCode, e.message));
-  }
+    })
+  );
 };
 
-export const buildAllowanceTx = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const { chainId, owner, spender, amount, tokenAddress }: any = req.query;
-    const result = await buildTx({
+export const buildAllowanceTx = async (req: Request, res: Response) => {
+  const { chainId, owner, spender, amount, tokenAddress }: any = req.query;
+  handleResponse(
+    res,
+    await buildTx({
       chainId,
       owner,
       spender,
       amount,
       tokenAddress,
-    });
-    res.status(200).json({
-      data: result,
-    });
-  } catch (e) {
-    next(createError(e.statusCode, e.message));
-  }
+    })
+  );
 };
