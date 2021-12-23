@@ -1,13 +1,12 @@
-import { Asset, BridgeId, ChainId, RouteId } from "./enums";
-
-export interface BaseListResponseDto<T> {
-  success: boolean;
-  results: T[];
+export interface ServiceResponseDto {
+  status: number;
+  message?: any;
+  data?: any;
 }
 
-export interface BaseResponseDto<T> {
+export interface ApiResponseDto {
   success: boolean;
-  result: T;
+  result: any;
 }
 
 export interface AllowanceRequestDto {
@@ -62,15 +61,48 @@ export interface QuoteRequestDto {
 }
 
 export interface QuoteResponseDto {
-  fromAsset: Asset;
-  fromChainId: ChainId;
-  toAsset: Asset;
-  toChainId: ChainId;
-  amountIn: string;
-  amountOut: string;
+  fromAsset: TokenResponseDto;
+  fromChainId: number;
+  toAsset: TokenResponseDto;
+  toChainId: number;
+  routes: RouteDto[]
+  amount: string;
+}
+
+export interface RouteDto {
+  id: number;
   allowanceTarget: string;
   isApprovalRequired: boolean;
-  routeId: RouteId;
+  bridgeRoute: BridgeRouteDto
+  fees: RouteFeeDto;
+}
+
+export interface BridgeRouteDto {
+  bridgeName: string
+  bridgeId: number
+  bridgeInfo: BridgeInfoDto
+  fromAsset: TokenResponseDto
+  fromChainId: number
+  toAsset: TokenResponseDto
+  toChainId: number
+  amountIn: string;
+  amountOut: string;
+}
+
+export interface BridgeInfoDto {
+  serviceTime: number;
+  displayName: string
+  isTestnet: boolean
+}
+
+export interface RouteFeeDto {
+  gasLimit: GasLimitDto[]
+}
+
+export interface GasLimitDto {
+ amount: string
+ assetAddress: string
+ chainId: number
 }
 
 export interface BuildTxResponseDto {
@@ -82,6 +114,7 @@ export interface BuildTxResponseDto {
 }
 
 export interface TokenResponseDto {
+  id: number;
   name: string;
   address: string;
   chainId: number;
