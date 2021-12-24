@@ -9,10 +9,7 @@ import {
   ServiceResponseDto,
 } from "../common/dtos";
 import { Asset } from "../common/enums";
-import {
-  calculateTransactionCost,
-  encodeParameter,
-} from "../helpers/web3";
+import { encodeParameter } from "../helpers/web3";
 import { Interface } from "@ethersproject/abi";
 import { BigNumber, ethers } from "ethers";
 import { hydraBridge } from "./contractInterfaces/contractInterfaces";
@@ -95,8 +92,6 @@ export const getQuote = async (
     });
 
     const bridgeIds = bridges.map((bridge) => bridge.id);
-    const price = await fetchEthUsdPrice();
-
     const dbRoutes = await prisma.route.findMany({
       where: {
         chain_from_id: chainFrom.id,
@@ -108,7 +103,11 @@ export const getQuote = async (
     const routes: RouteDto[] = [];
     for (const route of dbRoutes) {
       const bridge = bridges.find((br) => br.id === route.bridge_id);
-      let txDto = {};
+      let txDto: BuildTxResponseDto = {
+        data: "",
+        to: "",
+        from: "",
+      };
       if (
         bridge.name === "polygon-bridge" ||
         bridge.name === "polygon-bridge-goerli"
@@ -132,8 +131,7 @@ export const getQuote = async (
           chainTo.chainId
         );
       }
-      const txCostEth = await calculateTransactionCost(txDto);
-      const txCoast = parseFloat(txCostEth) * price;
+  
       const routeDto = mapRouteToDto(
         route,
         ETH_CONTRACT,
@@ -143,7 +141,8 @@ export const getQuote = async (
         chainTo.id,
         dto.amount,
         dto.amount,
-        txCoast
+        txDto
+        // txCoast
       );
 
       routes.push(routeDto);
@@ -179,7 +178,7 @@ export const buildTx = async (
     status: 200,
     data: buildResp,
   };
-  console.log(dto.amount);
+
   try {
     if (
       isEmpty(dto.fromAsset) ||
@@ -260,7 +259,7 @@ export const buildTx = async (
           tokenAddress: token.address,
           tokenSymbol: token.symbol,
         },
-        chainTo
+        chainTo.chainId
       );
       response.data = buildResp;
       return response;

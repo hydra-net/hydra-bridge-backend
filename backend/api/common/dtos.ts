@@ -82,7 +82,7 @@ export interface RouteDto {
   allowanceTarget: string;
   isApprovalRequired: boolean;
   bridgeRoute: BridgeRouteDto
-  fees: RouteFeeDto;
+  buildTx : BuildTxResponseDto
 }
 
 export interface BridgeRouteDto {

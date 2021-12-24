@@ -1,4 +1,4 @@
-import { RouteDto, TokenResponseDto } from "../../common/dtos";
+import { BuildTxResponseDto, RouteDto, TokenResponseDto } from "../../common/dtos";
 import { Asset } from "../../common/enums";
 
 export const mapTokenToDto = (
@@ -24,7 +24,7 @@ export const mapRouteToDto = (
   chainToId: number,
   amountIn: string,
   amountOut: string,
-  transactionCoast: number
+  buildTx: BuildTxResponseDto
 ): RouteDto => {
   return {
     id: route.id,
@@ -45,8 +45,6 @@ export const mapRouteToDto = (
       amountIn: amountIn,
       amountOut: amountOut, //TODO: add function to calculate amountOut
     },
-    fees: {
-      transactionCoastUsd : transactionCoast
-    },
+    buildTx: buildTx
   };
 };
