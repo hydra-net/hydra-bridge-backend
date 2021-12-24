@@ -148,7 +148,7 @@ const Button = ({
       </StyledButtonContent>
       {isLoading && (
         <SpinnerWrapper>
-          <LoadingSpinner />
+          <LoadingSpinner style={{ color: labelColor }} />
         </SpinnerWrapper>
       )}
     </StyledButton>

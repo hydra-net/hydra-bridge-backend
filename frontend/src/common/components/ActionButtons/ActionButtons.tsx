@@ -10,7 +10,8 @@ const Root = styled.div`
 type Props = {
   isConnected?: boolean;
   isApproved?: boolean;
-  isEth?: boolean
+  isEth?: boolean;
+  isAbleToMove?: boolean;
   isRouteIdSelected?: boolean;
   isAmountSet?: boolean;
   inProgress: boolean;
@@ -21,6 +22,7 @@ type Props = {
 
 const ActionButtons = ({
   isEth,
+  isAbleToMove,
   isRouteIdSelected,
   isAmountSet,
   isConnected,
@@ -28,12 +30,16 @@ const ActionButtons = ({
   inProgress,
   onWalletConnect,
   onWalletApprove,
-  onMoveAssets
+  onMoveAssets,
 }: Props) => {
   const theme = useTheme();
-  const showSelectRoute = isConnected && !isRouteIdSelected;
-  const showApprove = isConnected && isAmountSet && isRouteIdSelected && !isApproved && !isEth;
-  const showMoveAssets = isConnected && (isApproved || isEth) && isRouteIdSelected;
+  const showApprove =
+    isConnected && isAmountSet && !isApproved && !isEth && !inProgress;
+  const showInputAmount = isConnected && !isAmountSet && !inProgress;
+  const showSelectRoute =
+    isConnected && !isRouteIdSelected && isAbleToMove && isAmountSet && !inProgress;
+  const showMoveAssets =
+    isConnected && isAbleToMove && isRouteIdSelected && isAmountSet && !inProgress;
 
   return (
     <Root>
@@ -47,6 +53,29 @@ const ActionButtons = ({
           disabled={inProgress}
         />
       )}
+
+      {showInputAmount && (
+        <Button
+          background={theme.buttonDefaultColor}
+          fontWeight={"700"}
+          onClick={onWalletConnect}
+          width={"100%"}
+          text={"Input amount"}
+          disabled={inProgress}
+        />
+      )}
+
+      {inProgress && isConnected && (
+        <Button
+          background={theme.buttonDefaultColor}
+          fontWeight={"700"}
+          onClick={onWalletConnect}
+          width={"100%"}
+          isLoading={inProgress}
+          disabled={inProgress}
+        />
+      )}
+
       {showSelectRoute && (
         <Button
           background={theme.buttonDefaultColor}
@@ -56,6 +85,7 @@ const ActionButtons = ({
           disabled
         />
       )}
+
       {showApprove && (
         <Button
           background={theme.greenColor}
@@ -67,7 +97,6 @@ const ActionButtons = ({
           isLoading={inProgress}
         />
       )}
-
       {showMoveAssets && (
         <Button
           background={theme.blueColor}
