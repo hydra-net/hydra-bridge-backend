@@ -14,13 +14,13 @@ import {
 import { parseUnits } from "ethers/lib/utils";
 import { getAllChains, getBridgeTokens } from "../../api/commonService";
 import { Asset } from "../../common/enums";
+import { fetchEthUsdPrice } from "../../api/coingeckoService";
 require("dotenv").config();
 
 const {
   REACT_APP_NETWORK_ID,
   REACT_APP_BLOCKNATIVE_KEY,
   REACT_APP_HYDRA_BRIDGE_CONTRACT,
-  REACT_APP_USDC_CONTRACT_GOERLI,
 } = process.env;
 
 const wallets = [{ walletName: "metamask", preferred: true }];
@@ -59,12 +59,21 @@ export default function useHome() {
   const [amountIn, setAmountIn] = useState<number>(0);
   const [amountOut, setAmountOut] = useState<number>(0.0);
   const [routeId, setRouteId] = useState<number>(0);
+  const [ethPrice, setEthPrice] = useState<number>(0)
 
   //modal
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
   const token = tokens.find((t) => t.id === asset);
   const isEth = token?.symbol.toString().toLowerCase() === Asset[Asset.eth];
+
+  useEffect(() => {
+   async function getEthPrice(){
+      const ethPriceApi = await fetchEthUsdPrice();
+      setEthPrice(ethPriceApi)
+    }
+   getEthPrice();
+  },[])
 
   useEffect(() => {
     const onboard = Onboard({
@@ -134,6 +143,7 @@ export default function useHome() {
     chainId: number,
     tokenAddress: string
   ) => {
+    setInProgress(true)
     try {
       if (amountIn > 0) {
         const { address } = onBoard?.getState()!;
@@ -144,8 +154,7 @@ export default function useHome() {
           tokenAddress
         );
         if (res.success) {
-          const units =
-            tokenAddress === REACT_APP_USDC_CONTRACT_GOERLI ? 6 : 18;
+          const units = !isEth ? 6 : 18;
           const parsedAmountToSpend = parseUnits(amountIn.toString(), units);
           const amountToSpend = ethers.BigNumber.from(parsedAmountToSpend);
           const amountAllowed = ethers.BigNumber.from(
@@ -158,11 +167,14 @@ export default function useHome() {
       console.log(e);
       setError(e);
       setIsErrorOpen(true);
+    }finally {
+      setInProgress(false)
     }
   };
 
   const onGetQuote = async (dto: QuoteRequestDto) => {
     try {
+      setInProgress(true);
       const res = await getQuote(dto);
       if (res.success) {
         setBridgeRoutes(res.result ? res.result.routes : []);
@@ -171,6 +183,8 @@ export default function useHome() {
       console.log(e);
       setError(e);
       setIsErrorOpen(true);
+    } finally {
+      setInProgress(false);
     }
   };
 
@@ -179,6 +193,7 @@ export default function useHome() {
     tokenAddress: string,
     amount: number
   ) => {
+    setInProgress(true)
     try {
       const { address } = onBoard?.getState()!;
       if (!isApproved) {
@@ -198,6 +213,8 @@ export default function useHome() {
       console.log(e);
       setError(e);
       setIsErrorOpen(true);
+    }finally{
+      setInProgress(false)
     }
   };
 
@@ -227,6 +244,7 @@ export default function useHome() {
   };
 
   const getBridgeTxData = async (dto: BuildTxRequestDto) => {
+    setInProgress(true)
     try {
       const res = await buildBridgeTx(dto);
       if (res.success) {
@@ -237,6 +255,8 @@ export default function useHome() {
       console.log(e);
       setError(e);
       setIsErrorOpen(true);
+    }finally{
+      setInProgress(false)
     }
   };
 
@@ -272,6 +292,7 @@ export default function useHome() {
     chains,
     tokens,
     asset,
+    ethPrice,
     amountIn,
     amountOut,
     routeId,

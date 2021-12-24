@@ -70,7 +70,15 @@ export interface RouteDto {
   allowanceTarget: string;
   isApprovalRequired: boolean;
   bridgeRoute: BridgeRouteDto
-  fees: RouteFeeDto;
+  buildTx: BuildTxResponseDto;
+}
+
+export interface RouteCalculatedDto {
+  id: number;
+  allowanceTarget: string;
+  isApprovalRequired: boolean;
+  bridgeRoute: BridgeRouteDto
+  fees : RouteFeeDto
 }
 
 export interface BridgeRouteDto {
