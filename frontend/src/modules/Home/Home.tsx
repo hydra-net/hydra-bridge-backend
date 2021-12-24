@@ -88,6 +88,7 @@ const Home = () => {
     setError,
     tokens,
     token,
+    ethPrice,
     isEth,
     chains,
     amountIn,
@@ -108,7 +109,7 @@ const Home = () => {
     error,
     onBoard,
   } = useHome();
-
+  const isAbleToMove = isApproved || isEth;
   useEffect(() => {
     async function checkAllowance() {
       await onCheckAllowance(amountIn, chainFrom, token?.address!);
@@ -130,10 +131,10 @@ const Home = () => {
         amount: amountIn,
       });
     }
-    if (isConnected) {
+    if (isConnected && isAbleToMove) {
       getBridgesQuote();
     }
-  }, [asset, chainFrom, chainTo, amountIn, isConnected]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [asset, chainFrom, chainTo, amountIn, isConnected, isApproved]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     async function getApproveTxData() {
@@ -312,15 +313,18 @@ const Home = () => {
                 isRouteIdSelected={routeId > 0}
                 isEth={isEth}
                 isAmountSet={!!amountIn}
+                isAbleToMove={isAbleToMove}
                 onWalletConnect={onConnectWallet}
                 onWalletApprove={onApproveWallet}
                 onMoveAssets={handleMoveAssets}
               />
             </Container>
           </TransferWrapper>
-          {isConnected && (
+          {isAbleToMove && !!amountIn && amountIn > 0 && isConnected && (
             <BridgeRoutes
               isEth={isEth}
+              isInProgress={inProgress}
+              ethPrice={ethPrice}
               selectedRouteId={routeId}
               routes={bridgeRoutes}
               onClick={handleOnRouteClick}
