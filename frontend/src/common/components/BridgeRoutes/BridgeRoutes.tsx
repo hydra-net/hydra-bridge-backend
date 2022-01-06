@@ -70,14 +70,14 @@ const RouteItems = styled.div`
   justify-content: space-between;
 `;
 
-const AmountContainer = styled.div<{ isSelected?: boolean }>`
+const AmountContainer = styled.div`
   display: flex;
   flex-direction: row;
   ${getFlexCenter};
   ${getHorizontalGap("10px")};
 `;
 
-const AmountStyled = styled.div<{ isSelected?: boolean }>`
+const AmountStyled = styled.div`
   font-size: ${({ theme }) => theme.heading.xs};
 `;
 
@@ -141,6 +141,7 @@ const BridgeRoutes = ({
         const calculatedRoutes: RouteCalculatedDto[] = [];
         for (const route of filteredRoutes) {
           const txCoast = await calculateTransactionCost(route.buildTx);
+       
           const calculatedTxCoast = parseFloat(txCoast) * ethPrice;
           const calculatedRoute: RouteCalculatedDto = {
             id: route.id,
@@ -247,7 +248,7 @@ const BridgeRoutes = ({
                       <div>
                         <Icon name={assetIconName} />
                       </div>
-                      <AmountStyled isSelected={isSelected}>
+                      <AmountStyled>
                         {formatAmountOut}
                       </AmountStyled>
                     </AmountContainer>
