@@ -9,7 +9,6 @@ import {
   ServiceResponseDto,
 } from "../common/dtos";
 import { Asset } from "../common/enums";
-import { encodeParameter } from "../helpers/web3";
 import { Interface } from "@ethersproject/abi";
 import { BigNumber, ethers } from "ethers";
 import { hydraBridge } from "./contractInterfaces/contractInterfaces";
@@ -24,7 +23,6 @@ import {
 } from "../helpers/serviceErrorHelper";
 import prisma from "../helpers/db";
 import { mapRouteToDto, mapTokenToDto } from "../helpers/mappers/mapperDto";
-import { fetchEthUsdPrice } from "./coingeckoService";
 
 require("dotenv").config();
 const { ETH_CONTRACT, HOP_RELAYER, HOP_RELAYER_FEE } = process.env;
@@ -78,7 +76,6 @@ export const getQuote = async (
     if (!token || !chainFrom || !chainTo) {
       response.data = quoteResp;
       return response;
-      // return NotFound();
     }
 
     if (chainFrom.id === chainTo.id) {
@@ -131,7 +128,6 @@ export const getQuote = async (
           chainTo.chainId
         );
       }
-  
       const routeDto = mapRouteToDto(
         route,
         ETH_CONTRACT,
@@ -142,7 +138,6 @@ export const getQuote = async (
         dto.amount,
         dto.amount,
         txDto
-        // txCoast
       );
 
       routes.push(routeDto);
@@ -278,10 +273,9 @@ const getPolygonRoute = async (
     const units = dto.tokenSymbol.toLowerCase() === Asset[Asset.usdc] ? 6 : 18;
     const parsedAmount = parseUnits(dto.amount, units);
     const bigAmountIn = BigNumber.from(parsedAmount).toString();
-    const depositData = encodeParameter("uint256", bigAmountIn);
     const sendToPolygonData = HYDRA_BRIDGE_INTERFACE.encodeFunctionData(
       "sendToPolygon",
-      [dto.recipient, dto.tokenAddress, bigAmountIn, depositData]
+      [dto.recipient, dto.tokenAddress, bigAmountIn]
     );
     const resp = {
       data: sendToPolygonData,

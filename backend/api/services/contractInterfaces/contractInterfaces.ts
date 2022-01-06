@@ -16,11 +16,6 @@ export const hydraBridge = [
         name: "amount",
         type: "uint256",
       },
-      {
-        internalType: "bytes",
-        name: "depositData",
-        type: "bytes",
-      },
     ],
     name: "sendToPolygon",
     outputs: [],
