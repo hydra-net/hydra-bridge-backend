@@ -1,7 +1,5 @@
-import Onboard from "bnc-onboard";
 import { useEffect, useState } from "react";
 import { ethers } from "ethers";
-import { API } from "bnc-onboard/dist/src/interfaces";
 import { buildApprovalTx, checkAllowance } from "../../api/allowancesService";
 import { buildBridgeTx, getQuote } from "../../api/bridgeService";
 import {
@@ -15,15 +13,12 @@ import { parseUnits } from "ethers/lib/utils";
 import { getAllChains, getBridgeTokens } from "../../api/commonService";
 import { Asset } from "../../common/enums";
 import { fetchEthUsdPrice } from "../../api/coingeckoService";
+import { useWeb3 } from "@chainsafe/web3-context";
 require("dotenv").config();
 
 const {
-  REACT_APP_NETWORK_ID,
-  REACT_APP_BLOCKNATIVE_KEY,
   REACT_APP_HYDRA_BRIDGE_CONTRACT,
 } = process.env;
-
-const wallets = [{ walletName: "metamask", preferred: true }];
 
 export const CHAIN_FROM_DEFAULT = 5;
 export const CHAIN_TO_DEFAULT = 80001;
@@ -31,10 +26,6 @@ export const CHAIN_TO_DEFAULT = 80001;
 let provider: any;
 
 export default function useHome() {
-  //wallet
-  const [wallet, setWallet] = useState<any>();
-  const [onBoard, setOnboard] = useState<API | null>();
-
   //transaction actions
   const [bridgeRoutes, setBridgeRoutes] = useState<RouteDto[]>([]);
   const [buildApproveTx, setBuildApproveTx] = useState<any>();
@@ -45,7 +36,6 @@ export default function useHome() {
   const [error, setError] = useState<any>(undefined);
 
   //checks
-  const [isConnected, setIsConnected] = useState<boolean>(false);
   const [isApproved, setIsApproved] = useState<boolean>(false);
   const [isErrorOpen, setIsErrorOpen] = useState<boolean>(false);
   const [inProgress, setInProgress] = useState<boolean>(false);
@@ -55,11 +45,11 @@ export default function useHome() {
   const [chains, setChains] = useState<ChainResponseDto[]>([]);
   const [chainFrom, setChainFrom] = useState<number>(CHAIN_FROM_DEFAULT);
   const [chainTo, setChainTo] = useState<number>(CHAIN_TO_DEFAULT);
-  const [asset, setAsset] = useState<number>(0);
+  const [asset, setAsset] = useState<number>(4);
   const [amountIn, setAmountIn] = useState<number>(0);
   const [amountOut, setAmountOut] = useState<number>(0.0);
   const [routeId, setRouteId] = useState<number>(0);
-  const [ethPrice, setEthPrice] = useState<number>(0)
+  const [ethPrice, setEthPrice] = useState<number>(0);
 
   //modal
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -67,42 +57,15 @@ export default function useHome() {
   const token = tokens.find((t) => t.id === asset);
   const isEth = token?.symbol.toString().toLowerCase() === Asset[Asset.eth];
 
+  const { onboard, address } = useWeb3();
+
   useEffect(() => {
-   async function getEthPrice(){
+    async function getEthPrice() {
       const ethPriceApi = await fetchEthUsdPrice();
-      setEthPrice(ethPriceApi)
+      setEthPrice(ethPriceApi);
     }
-   getEthPrice();
-  },[])
-
-  useEffect(() => {
-    const onboard = Onboard({
-      dappId: REACT_APP_BLOCKNATIVE_KEY,
-      networkId: Number.parseInt(REACT_APP_NETWORK_ID || "5"),
-      subscriptions: {
-        wallet: (webWallet) => {
-          if (webWallet.provider) {
-            setWallet(wallet);
-
-            provider = new ethers.providers.Web3Provider(
-              webWallet.provider,
-              "any"
-            );
-
-            window.localStorage.setItem("selectedWallet", webWallet.name!);
-          } else {
-            provider = null;
-            setWallet({});
-          }
-        },
-      },
-      walletSelect: {
-        wallets,
-      },
-    });
-
-    setOnboard(onboard);
-  }, [wallet]);
+    getEthPrice();
+  }, []);
 
   useEffect(() => {
     async function getTokens() {
@@ -131,11 +94,10 @@ export default function useHome() {
 
   const onConnectWallet = async () => {
     // Prompt user to select a wallet
-    await onBoard?.walletSelect();
+    await onboard?.walletSelect();
 
     // Run wallet checks to make sure that user is ready to transact
-    const isReady = await onBoard?.walletCheck();
-    setIsConnected(isReady!);
+   await onboard?.walletCheck();
   };
 
   const onCheckAllowance = async (
@@ -143,10 +105,10 @@ export default function useHome() {
     chainId: number,
     tokenAddress: string
   ) => {
-    setInProgress(true)
+    setInProgress(true);
     try {
       if (amountIn > 0) {
-        const { address } = onBoard?.getState()!;
+        const { address } = onboard?.getState()!;
         const res = await checkAllowance(
           chainId,
           address,
@@ -167,8 +129,8 @@ export default function useHome() {
       console.log(e);
       setError(e);
       setIsErrorOpen(true);
-    }finally {
-      setInProgress(false)
+    } finally {
+      setInProgress(false);
     }
   };
 
@@ -193,10 +155,9 @@ export default function useHome() {
     tokenAddress: string,
     amount: number
   ) => {
-    setInProgress(true)
+    setInProgress(true);
     try {
-      const { address } = onBoard?.getState()!;
-      if (!isApproved) {
+      if (!isApproved && address) {
         const res = await buildApprovalTx(
           chainId,
           address,
@@ -213,8 +174,8 @@ export default function useHome() {
       console.log(e);
       setError(e);
       setIsErrorOpen(true);
-    }finally{
-      setInProgress(false)
+    } finally {
+      setInProgress(false);
     }
   };
 
@@ -244,7 +205,7 @@ export default function useHome() {
   };
 
   const getBridgeTxData = async (dto: BuildTxRequestDto) => {
-    setInProgress(true)
+    setInProgress(true);
     try {
       const res = await buildBridgeTx(dto);
       if (res.success) {
@@ -255,8 +216,8 @@ export default function useHome() {
       console.log(e);
       setError(e);
       setIsErrorOpen(true);
-    }finally{
-      setInProgress(false)
+    } finally {
+      setInProgress(false);
     }
   };
 
@@ -297,7 +258,6 @@ export default function useHome() {
     amountOut,
     routeId,
     isEth,
-    isConnected,
     isApproved,
     isErrorOpen,
     inProgress,
@@ -309,7 +269,6 @@ export default function useHome() {
     buildApproveTx,
     txHash,
     bridgeRoutes,
-    error,
-    onBoard,
+    error
   };
 }

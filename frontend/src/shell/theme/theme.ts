@@ -75,7 +75,7 @@ export const defaultTheme: DefaultTheme = {
   inputBackgroundColor: "rgba(255, 255, 255, 0.05)",
   inputBorderColor: "rgba(255, 255, 255, 0.3)",
   lightBackgroundColor: "#2d2d2d",
-  greyColor: "#a1a1a1",
+  greyColor: "rgb(226, 226, 229)",
   buttonDefaultColor: "rgba(0,0,0,0.2)",
   greenColor: "#37b514",
   blueColor: "#1976d2",

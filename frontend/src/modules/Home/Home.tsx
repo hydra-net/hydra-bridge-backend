@@ -1,3 +1,4 @@
+import { useWeb3 } from "@chainsafe/web3-context";
 import { useEffect } from "react";
 import styled from "styled-components";
 import { ISelectOption } from "../../common/commonTypes";
@@ -12,22 +13,13 @@ import TransferChainSelects from "../../common/components/TransferChain/Transfer
 import { BuildTxRequestDto, ChainResponseDto } from "../../common/dtos";
 import {
   getFlexCenter,
-  getFlexStart,
   getVerticalGap,
 } from "../../common/styles";
 import useHome from "./useHome";
 
 const Root = styled.div``;
 
-const TitleContainer = styled.div`
-  ${getFlexStart};
-  margin-top: 10px;
-  margin-left: 10px;
-`;
-const Title = styled.div`
-  font-size: ${({ theme }) => theme.heading.md};
-  font-weight: 700;
-`;
+
 const Wrapper = styled.div`
   margin: 0 auto;
   max-width: 520px;
@@ -96,7 +88,6 @@ const Home = () => {
     routeId,
     asset,
     isErrorOpen,
-    isConnected,
     isApproved,
     inProgress,
     isModalOpen,
@@ -107,9 +98,11 @@ const Home = () => {
     chainFrom,
     txHash,
     error,
-    onBoard,
   } = useHome();
+  const { address } = useWeb3();
   const isAbleToMove = isApproved || isEth;
+  const isConnected = !!address
+  
   useEffect(() => {
     async function checkAllowance() {
       await onCheckAllowance(amountIn, chainFrom, token?.address!);
@@ -121,9 +114,9 @@ const Home = () => {
 
   useEffect(() => {
     async function getBridgesQuote() {
-      const { address } = onBoard?.getState()!;
+  
       await onGetQuote({
-        recipient: address,
+        recipient: address!,
         fromAsset: asset,
         fromChainId: chainFrom,
         toAsset: asset,
@@ -131,7 +124,7 @@ const Home = () => {
         amount: amountIn,
       });
     }
-    if (isConnected && isAbleToMove) {
+    if (isConnected && isAbleToMove && address) {
       getBridgesQuote();
     }
   }, [asset, chainFrom, chainTo, amountIn, isConnected, isApproved]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -148,7 +141,7 @@ const Home = () => {
 
   useEffect(() => {
     async function getMoveTxData() {
-      const { address } = onBoard?.getState()!;
+   
       const dto: BuildTxRequestDto = {
         amount: amountIn,
         fromAsset: asset!,
@@ -156,13 +149,13 @@ const Home = () => {
         fromChainId: chainFrom!,
         toChainId: chainTo!,
         routeId: routeId!,
-        recipient: address,
+        recipient: address!,
       };
 
       await getBridgeTxData(dto);
     }
 
-    if (onBoard && (isApproved || (isEth && routeId > 0))) {
+    if (address && (isApproved || (isEth && routeId > 0))) {
       getMoveTxData();
     }
   }, [isApproved, routeId, amountIn]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -258,9 +251,6 @@ const Home = () => {
   return (
     <>
       <Root>
-        <TitleContainer>
-          <Title>Hydra bridge</Title>
-        </TitleContainer>
         <Wrapper>
           <SendWrapper>
             <AssetSelect
