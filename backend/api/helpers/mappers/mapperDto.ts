@@ -35,7 +35,7 @@ export const mapRouteToDto = (
       bridgeId: bridge.id,
       bridgeInfo: {
         displayName: bridge.display_name,
-        serviceTime: 0,
+        serviceTime: bridge.processing_time_seconds,
         isTestnet: bridge.is_testnet
       },
       fromAsset: token,
