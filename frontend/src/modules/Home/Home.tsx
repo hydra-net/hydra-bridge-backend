@@ -80,7 +80,6 @@ const Home = () => {
     setError,
     tokens,
     token,
-    ethPrice,
     isEth,
     chains,
     amountIn,
@@ -312,12 +311,10 @@ const Home = () => {
           </TransferWrapper>
           {isAbleToMove && !!amountIn && amountIn > 0 && isConnected && (
             <BridgeRoutes
-              isEth={isEth}
-              isInProgress={inProgress}
-              ethPrice={ethPrice}
+              inProgress={inProgress}
               selectedRouteId={routeId}
               routes={bridgeRoutes}
-              onClick={handleOnRouteClick}
+              onRouteSelect={handleOnRouteClick}
             />
           )}
         </Wrapper>

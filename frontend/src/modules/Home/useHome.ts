@@ -6,6 +6,7 @@ import {
   BuildTxRequestDto,
   ChainResponseDto,
   QuoteRequestDto,
+  RouteCalculatedDto,
   RouteDto,
   TokenResponseDto,
 } from "../../common/dtos";
@@ -14,11 +15,10 @@ import { getAllChains, getBridgeTokens } from "../../api/commonService";
 import { Asset } from "../../common/enums";
 import { fetchEthUsdPrice } from "../../api/coingeckoService";
 import { useWeb3 } from "@chainsafe/web3-context";
+import { calculateTransactionCost } from "../../helpers/web3Helper";
 require("dotenv").config();
 
-const {
-  REACT_APP_HYDRA_BRIDGE_CONTRACT,
-} = process.env;
+const { REACT_APP_HYDRA_BRIDGE_CONTRACT } = process.env;
 
 export const CHAIN_FROM_DEFAULT = 5;
 export const CHAIN_TO_DEFAULT = 80001;
@@ -27,7 +27,7 @@ let provider: any;
 
 export default function useHome() {
   //transaction actions
-  const [bridgeRoutes, setBridgeRoutes] = useState<RouteDto[]>([]);
+  const [bridgeRoutes, setBridgeRoutes] = useState<RouteCalculatedDto[]>([]);
   const [buildApproveTx, setBuildApproveTx] = useState<any>();
   const [bridgeTx, setBridgeTx] = useState<any>();
   const [txHash, setTxHash] = useState<string>();
@@ -97,7 +97,7 @@ export default function useHome() {
     await onboard?.walletSelect();
 
     // Run wallet checks to make sure that user is ready to transact
-   await onboard?.walletCheck();
+    await onboard?.walletCheck();
   };
 
   const onCheckAllowance = async (
@@ -139,7 +139,40 @@ export default function useHome() {
       setInProgress(true);
       const res = await getQuote(dto);
       if (res.success) {
-        setBridgeRoutes(res.result ? res.result.routes : []);
+        if (res.result) {
+          let filteredRoutes = res.result.routes;
+
+          if (isEth) {
+            filteredRoutes = res.result.routes.filter(
+              (route: RouteDto) =>
+                route.bridgeRoute.bridgeName !== "hop-bridge-goerli"
+            );
+          }
+
+          const calculatedRoutes: RouteCalculatedDto[] = [];
+          for (const route of filteredRoutes) {
+            const txCoast = await calculateTransactionCost(route.buildTx);
+
+            const calculatedRoute: RouteCalculatedDto = {
+              id: route.id,
+              allowanceTarget: route.allowanceTarget,
+              isApprovalRequired: route.isApprovalRequired,
+              bridgeRoute: route.bridgeRoute,
+              fees: {
+                transactionCoastUsd: parseFloat(txCoast) * ethPrice,
+              },
+            };
+
+            calculatedRoutes.push(calculatedRoute);
+          }
+          calculatedRoutes.sort(
+            (a, b) => a.fees.transactionCoastUsd - b.fees.transactionCoastUsd
+          );
+
+          const cheapestRoute = calculatedRoutes[0];
+          setRouteId(cheapestRoute.id);
+          setBridgeRoutes(calculatedRoutes);
+        }
       }
     } catch (e) {
       console.log(e);
@@ -269,6 +302,6 @@ export default function useHome() {
     buildApproveTx,
     txHash,
     bridgeRoutes,
-    error
+    error,
   };
 }
