@@ -45,7 +45,7 @@ const ActionButtons = ({
     <Root>
       {!isConnected && (
         <Button
-          background={theme.buttonDefaultColor}
+          background={theme.blueColor}
           fontWeight={"700"}
           onClick={onWalletConnect}
           width={"100%"}
