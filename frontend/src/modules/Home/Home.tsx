@@ -148,7 +148,7 @@ const Home = () => {
     if (regEx.test(value)) {
         setAmountIn(value);
         setAmountOut(value);
-        checkBalance(value);
+        checkBalance(value,asset);
         debouncedQuote(address!, asset, asset, chainFrom, chainTo, value);
     } else {
       const parsedValue = value.replace(/\D/, "");
@@ -157,13 +157,13 @@ const Home = () => {
     }
   };
 
-  const checkBalance = (value: number) => {
+  const checkBalance = (value: number, asset : number) => {
     try {
       const tokenBalanceDto = walletBalances?.find(
         (tokenBalance) => tokenBalance.tokenId === asset
       );
       if (tokenBalanceDto && value) {
-        const units = !isEth ? 6 : 18;
+        const units = tokenBalanceDto.symbol.toLocaleLowerCase() !== "eth" ? 6 : 18;
         const parsedAmountToSpend = parseUnits(value.toString(), units);
         const amountInBig = ethers.BigNumber.from(parsedAmountToSpend);
         const balanceBig = ethers.BigNumber.from(tokenBalanceDto?.amount!);
@@ -220,9 +220,9 @@ const Home = () => {
   const handleSelectAsset = (option: any) => {
     const { value } = option;
     setAsset(option ? value : null);
-    if(amountIn > 0)
+    if(amountIn && amountIn > 0)
     {
-      checkBalance(amountIn!)
+      checkBalance(amountIn,value)
       debouncedQuote(address!, value, value, chainFrom, chainTo, amountIn!);
     }
    
