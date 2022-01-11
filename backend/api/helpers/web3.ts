@@ -1,5 +1,6 @@
 import { ethers } from "ethers";
 import Web3 from "web3";
+import { BuildTxResponseDto } from "../common/dtos";
 require("dotenv").config();
 const { ETH_INFURA_ID, ETH_NETWORK, ETH_CHAIN_ID } = process.env;
 
@@ -38,4 +39,14 @@ export const decodeParameter = (
 ) => {
   const web3 = new Web3(getProviderUrl());
   return data ? web3.eth.abi.decodeParameter(type, data) : undefined;
+};
+
+export const calculateTransactionCost = async (
+  params: BuildTxResponseDto
+): Promise<string> => {
+  const web3 = new Web3(getProviderUrl());
+  const gasPrice = await web3.eth.getGasPrice();
+  const gasLimit = await web3.eth.estimateGas(params);
+  var transactionFee = Number.parseInt(gasPrice) * gasLimit;
+  return ethers.utils.formatEther(transactionFee);
 };

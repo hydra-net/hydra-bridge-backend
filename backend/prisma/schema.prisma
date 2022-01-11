@@ -55,9 +55,10 @@ model Bridge {
   updated_at   DateTime          @updatedAt
   name         String            @db.VarChar(255)
   display_name String            @db.VarChar(255)
-  is_testnet   Boolean          @default(false)
+  is_testnet   Boolean           @default(false)
   tokens       BridgesOnTokens[]
   routes       Route[]
+  processing_time_seconds Int   @default(0)
 }
 
 model BridgesOnTokens {

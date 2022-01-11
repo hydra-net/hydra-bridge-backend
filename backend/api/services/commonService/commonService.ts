@@ -3,15 +3,17 @@ import {
   ChainResponseDto,
   ServiceResponseDto,
   TokenResponseDto,
-} from "../common/dtos";
-import prisma from "../helpers/db";
-import { consoleLogger, hydraLogger } from "../helpers/hydraLogger";
-import { mapTokenToDto } from "../helpers/mappers/mapperDto";
-import { ServerError } from "../helpers/serviceErrorHelper";
+} from "../../common/dtos";
+import prisma from "../../helpers/db";
+import { consoleLogger, hydraLogger } from "../../helpers/hydraLogger";
+import { BadRequest, ServerError } from "../../helpers/serviceErrorHelper";
+import { isEmpty } from "../../helpers/stringHelper";
+import { getTokensByChainId } from "./commonServiceHelper";
 require("dotenv").config();
 
-
-export const getTokens = async (chainId: string) : Promise<ServiceResponseDto> => {
+export const getTokens = async (
+  chainId: string
+): Promise<ServiceResponseDto> => {
   let response: ServiceResponseDto = {
     status: 200,
     data: null,
@@ -22,47 +24,14 @@ export const getTokens = async (chainId: string) : Promise<ServiceResponseDto> =
     result: [],
   };
 
-  try {
-    const parsedChainId = Number.parseInt(chainId);
-    const chain = await prisma.chain.findFirst({
-      where: {
-        chainId: parsedChainId,
-      },
-    });
+  if (isEmpty(chainId)) {
+    return BadRequest();
+  }
 
-    if (chain) {
-      const chainTokens = await prisma.chainsOnTokens.findMany({
-        where: {
-          chain_id: chain.id,
-        },
-        include: {
-          token: {
-            select: {
-              id: true,
-              name: true,
-              address: true,
-              decimals: true,
-              symbol: true,
-            },
-          },
-          chain: {
-            select: {
-              id: true,
-              chainId: true,
-            },
-          },
-        },
-      });
-      const tokens: TokenResponseDto[] = [];
-      for (let i = 0; i < chainTokens.length; i++) {
-        const item = chainTokens[i];
-        const dto: TokenResponseDto = mapTokenToDto(item.token, item.chain.id);
-        tokens.push(dto);
-      }
-      apiResponse.result = tokens;
-      response.data = apiResponse;
-      return response;
-    }
+  try {
+    apiResponse.result = await getTokensByChainId(chainId);
+    response.data = apiResponse;
+    return response;
   } catch (e) {
     consoleLogger.error(e);
     hydraLogger.error(e);
@@ -70,7 +39,7 @@ export const getTokens = async (chainId: string) : Promise<ServiceResponseDto> =
   }
 };
 
-export const getChains = async () : Promise<ServiceResponseDto> => {
+export const getChains = async (): Promise<ServiceResponseDto> => {
   let response: ServiceResponseDto = {
     status: 200,
     data: null,

@@ -1,40 +1,27 @@
-import Onboard from "bnc-onboard";
 import { useEffect, useState } from "react";
-import { ethers } from "ethers";
-import { API } from "bnc-onboard/dist/src/interfaces";
-import { buildApprovalTx, checkAllowance } from "../../api/allowancesService";
+import { buildApprovalTx } from "../../api/allowancesService";
 import { buildBridgeTx, getQuote } from "../../api/bridgeService";
 import {
   BuildTxRequestDto,
   ChainResponseDto,
   QuoteRequestDto,
   RouteDto,
+  TokenBalanceDto,
   TokenResponseDto,
 } from "../../common/dtos";
-import { parseUnits } from "ethers/lib/utils";
 import { getAllChains, getBridgeTokens } from "../../api/commonService";
-import { Asset } from "../../common/enums";
 import { fetchEthUsdPrice } from "../../api/coingeckoService";
+import { useWeb3 } from "@chainsafe/web3-context";
+import { getUserAddressBalances } from "../../api/balancesService";
+import { isEmpty } from "../../helpers/stringHelper";
 require("dotenv").config();
 
-const {
-  REACT_APP_NETWORK_ID,
-  REACT_APP_BLOCKNATIVE_KEY,
-  REACT_APP_HYDRA_BRIDGE_CONTRACT,
-} = process.env;
-
-const wallets = [{ walletName: "metamask", preferred: true }];
+const { REACT_APP_HYDRA_BRIDGE_CONTRACT } = process.env;
 
 export const CHAIN_FROM_DEFAULT = 5;
 export const CHAIN_TO_DEFAULT = 80001;
 
-let provider: any;
-
 export default function useHome() {
-  //wallet
-  const [wallet, setWallet] = useState<any>();
-  const [onBoard, setOnboard] = useState<API | null>();
-
   //transaction actions
   const [bridgeRoutes, setBridgeRoutes] = useState<RouteDto[]>([]);
   const [buildApproveTx, setBuildApproveTx] = useState<any>();
@@ -45,7 +32,6 @@ export default function useHome() {
   const [error, setError] = useState<any>(undefined);
 
   //checks
-  const [isConnected, setIsConnected] = useState<boolean>(false);
   const [isApproved, setIsApproved] = useState<boolean>(false);
   const [isErrorOpen, setIsErrorOpen] = useState<boolean>(false);
   const [inProgress, setInProgress] = useState<boolean>(false);
@@ -55,151 +41,145 @@ export default function useHome() {
   const [chains, setChains] = useState<ChainResponseDto[]>([]);
   const [chainFrom, setChainFrom] = useState<number>(CHAIN_FROM_DEFAULT);
   const [chainTo, setChainTo] = useState<number>(CHAIN_TO_DEFAULT);
-  const [asset, setAsset] = useState<number>(0);
-  const [amountIn, setAmountIn] = useState<number>(0);
+  const [walletBalances, setWalletBalances] = useState<TokenBalanceDto[]>();
+  const [asset, setAsset] = useState<number>(4);
+  const [amountIn, setAmountIn] = useState<number>(0.0);
   const [amountOut, setAmountOut] = useState<number>(0.0);
   const [routeId, setRouteId] = useState<number>(0);
-  const [ethPrice, setEthPrice] = useState<number>(0)
+  const [ethPrice, setEthPrice] = useState<number>(0);
 
   //modal
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
   const token = tokens.find((t) => t.id === asset);
-  const isEth = token?.symbol.toString().toLowerCase() === Asset[Asset.eth];
+  const isEth = token?.symbol.toString().toLowerCase() === "eth";
+
+  const { onboard, address, provider } = useWeb3();
 
   useEffect(() => {
-   async function getEthPrice(){
+    async function getEthPrice() {
       const ethPriceApi = await fetchEthUsdPrice();
-      setEthPrice(ethPriceApi)
+      setEthPrice(ethPriceApi);
     }
-   getEthPrice();
-  },[])
+    getEthPrice();
+  }, []);
 
   useEffect(() => {
-    const onboard = Onboard({
-      dappId: REACT_APP_BLOCKNATIVE_KEY,
-      networkId: Number.parseInt(REACT_APP_NETWORK_ID || "5"),
-      subscriptions: {
-        wallet: (webWallet) => {
-          if (webWallet.provider) {
-            setWallet(wallet);
-
-            provider = new ethers.providers.Web3Provider(
-              webWallet.provider,
-              "any"
-            );
-
-            window.localStorage.setItem("selectedWallet", webWallet.name!);
-          } else {
-            provider = null;
-            setWallet({});
+    async function getWalletBalances() {
+      try {
+        if (address) {
+          const res = await getUserAddressBalances(address, chainFrom);
+          if (res && res.success) {
+            setWalletBalances(res.result);
           }
-        },
-      },
-      walletSelect: {
-        wallets,
-      },
-    });
-
-    setOnboard(onboard);
-  }, [wallet]);
+        }
+      } catch (e) {
+        console.log(e);
+        setError(e);
+        setIsErrorOpen(true);
+      }
+    }
+    getWalletBalances();
+  }, [address, chainFrom, setWalletBalances]);
 
   useEffect(() => {
     async function getTokens() {
-      setInProgress(true);
       const res = await getBridgeTokens(chainFrom);
       if (res && res.success) {
         setTokens(res.result);
       }
-
-      setInProgress(false);
     }
     getTokens();
   }, [chainFrom]);
 
   useEffect(() => {
     async function getChains() {
-      setInProgress(true);
       const res = await getAllChains();
       if (res && res.success) {
         setChains(res.result);
       }
-      setInProgress(false);
     }
     getChains();
   }, []);
 
   const onConnectWallet = async () => {
     // Prompt user to select a wallet
-    await onBoard?.walletSelect();
+    await onboard?.walletSelect();
 
     // Run wallet checks to make sure that user is ready to transact
-    const isReady = await onBoard?.walletCheck();
-    setIsConnected(isReady!);
-  };
-
-  const onCheckAllowance = async (
-    amountIn: number,
-    chainId: number,
-    tokenAddress: string
-  ) => {
-    setInProgress(true)
-    try {
-      if (amountIn > 0) {
-        const { address } = onBoard?.getState()!;
-        const res = await checkAllowance(
-          chainId,
-          address,
-          REACT_APP_HYDRA_BRIDGE_CONTRACT!,
-          tokenAddress
-        );
-        if (res.success) {
-          const units = !isEth ? 6 : 18;
-          const parsedAmountToSpend = parseUnits(amountIn.toString(), units);
-          const amountToSpend = ethers.BigNumber.from(parsedAmountToSpend);
-          const amountAllowed = ethers.BigNumber.from(
-            res.result?.value.toString()
-          );
-          setIsApproved(amountAllowed.gte(amountToSpend));
-        }
-      }
-    } catch (e) {
-      console.log(e);
-      setError(e);
-      setIsErrorOpen(true);
-    }finally {
-      setInProgress(false)
-    }
+    await onboard?.walletCheck();
   };
 
   const onGetQuote = async (dto: QuoteRequestDto) => {
-    try {
-      setInProgress(true);
-      const res = await getQuote(dto);
-      if (res.success) {
-        setBridgeRoutes(res.result ? res.result.routes : []);
+    setInProgress(true);
+    if (
+      dto.amount &&
+      dto.fromAsset &&
+      dto.toAsset &&
+      dto.toChainId &&
+      dto.fromChainId &&
+      dto.recipient
+    ) {
+      try {
+        const res = await getQuote(dto);
+        if (res.success) {
+          if (res.result) {
+            let filteredRoutes = res.result.routes;
+            const isEther = res.result.fromAsset.symbol.toLowerCase() === "eth";
+            if (isEther) {
+              filteredRoutes = res.result.routes.filter(
+                (route: RouteDto) =>
+                  route.bridgeRoute.bridgeName !== "hop-bridge-goerli"
+              );
+            }
+            const cheapestRoute = filteredRoutes[0];
+            setRouteId(cheapestRoute.id);
+            setBridgeRoutes(filteredRoutes);
+            if (res.result.isApproved) {
+              setIsApproved(true);
+            } else {
+              setIsApproved(false);
+
+              if (!isEther) {
+                await onBuildApproveTxData(
+                  dto.recipient,
+                  res.result.isApproved,
+                  dto.toChainId,
+                  dto.amount,
+                  res.result.fromAsset.address
+                );
+              }
+            }
+          }
+        }
+      } catch (e) {
+        console.log(e);
+        setError(e);
+        setIsErrorOpen(true);
+      } finally {
+        setInProgress(false);
       }
-    } catch (e) {
-      console.log(e);
-      setError(e);
-      setIsErrorOpen(true);
-    } finally {
-      setInProgress(false);
     }
   };
 
   const onBuildApproveTxData = async (
+    walletAddress: string,
+    isApproved: boolean,
     chainId: number,
-    tokenAddress: string,
-    amount: number
+    amount: number,
+    tokenAddress: string
   ) => {
-    setInProgress(true)
     try {
-      const { address } = onBoard?.getState()!;
-      if (!isApproved) {
+      if (
+        !isApproved &&
+        walletAddress &&
+        !isEmpty(amount.toString()) &&
+        tokenAddress &&
+        !isEth
+      ) {
         const res = await buildApprovalTx(
           chainId,
-          address,
+          walletAddress,
           REACT_APP_HYDRA_BRIDGE_CONTRACT!,
           tokenAddress,
           amount
@@ -213,15 +193,13 @@ export default function useHome() {
       console.log(e);
       setError(e);
       setIsErrorOpen(true);
-    }finally{
-      setInProgress(false)
     }
   };
 
   const onApproveWallet = async () => {
     try {
       if (buildApproveTx) {
-        const signer = provider.getUncheckedSigner();
+        const signer = provider!.getUncheckedSigner();
         const tx = await signer.sendTransaction(buildApproveTx);
         if (tx) {
           console.log("Approve tx hash:", tx.hash);
@@ -231,8 +209,15 @@ export default function useHome() {
           const receipt = await tx.wait();
           if (receipt.logs) {
             setIsApproved(true);
-            setInProgress(false);
             console.log("Approve receipt logs", receipt.logs);
+            await onGetQuote({
+              recipient: address!,
+              fromAsset: asset,
+              fromChainId: chainFrom,
+              toAsset: asset,
+              toChainId: chainTo,
+              amount: amountIn,
+            });
           }
         }
       }
@@ -240,11 +225,12 @@ export default function useHome() {
       console.log(e);
       setError(e);
       setIsErrorOpen(true);
+    } finally {
+      setInProgress(false);
     }
   };
 
   const getBridgeTxData = async (dto: BuildTxRequestDto) => {
-    setInProgress(true)
     try {
       const res = await buildBridgeTx(dto);
       if (res.success) {
@@ -255,15 +241,13 @@ export default function useHome() {
       console.log(e);
       setError(e);
       setIsErrorOpen(true);
-    }finally{
-      setInProgress(false)
     }
   };
 
   const onReset = () => {
     setInProgress(false);
     setAmountOut(0.0);
-    setAmountIn(0);
+    setAmountIn(0.0);
     setIsApproved(false);
     setRouteId(0);
   };
@@ -271,7 +255,6 @@ export default function useHome() {
   return {
     onConnectWallet,
     onGetQuote,
-    onCheckAllowance,
     onBuildApproveTxData,
     onApproveWallet,
     onReset,
@@ -288,6 +271,7 @@ export default function useHome() {
     setTxHash,
     setError,
     setIsApproved,
+    walletBalances,
     token,
     chains,
     tokens,
@@ -297,7 +281,6 @@ export default function useHome() {
     amountOut,
     routeId,
     isEth,
-    isConnected,
     isApproved,
     isErrorOpen,
     inProgress,
@@ -310,6 +293,5 @@ export default function useHome() {
     txHash,
     bridgeRoutes,
     error,
-    onBoard,
   };
 }

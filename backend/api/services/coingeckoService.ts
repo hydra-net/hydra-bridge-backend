@@ -1,6 +1,8 @@
 import axios from "axios";
+import { TokenPriceDto } from "../common/dtos";
+import { getGeckoToTokenSymbol } from "../helpers/coingeckoHelper";
 
-export const fetchEthUsdPrice = async () : Promise<number> => {
+export const fetchEthUsdPrice = async (): Promise<number> => {
   try {
     const res = await axios.get(
       "https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd"
@@ -10,18 +12,27 @@ export const fetchEthUsdPrice = async () : Promise<number> => {
   } catch (e) {
     console.log(e);
   }
+};
 
-  // .then((res) => {
-  //   const headerDate =
-  //     res.headers && res.headers.date ? res.headers.date : "no response date";
-  //   console.log("Status Code:", res.status);
-  //   console.log("Date in Response header:", headerDate);
-
-  //   const price = res.data;
-  //   console.log(price);
-  //   return price;
-  // })
-  // .catch((err) => {
-  //   console.log("Error: ", err.message);
-  // });
+export const fetchAllTokenPrices = async (): Promise<TokenPriceDto[]> => {
+  const tokenPrices: TokenPriceDto[] = [];
+  try {
+    const response: any = await axios.get(
+      `https://api.coingecko.com/api/v3/simple/price?ids=ethereum,usd-coin&vs_currencies=usd`
+    );
+   
+    for(const i in response.data)
+    {
+      const tokeySymbol = getGeckoToTokenSymbol(i);
+      const tokenPriceEth: TokenPriceDto = {
+        symbol: tokeySymbol,
+        price: response.data[i].usd,
+      };
+      tokenPrices.push(tokenPriceEth);
+    }
+    return tokenPrices;
+  } catch (e) {
+    console.log(e);
+    return []
+  }
 };

@@ -15,6 +15,8 @@ type Props = {
   isRouteIdSelected?: boolean;
   isAmountSet?: boolean;
   inProgress: boolean;
+  isNotEnoughBalance: boolean;
+  isApproveReady: boolean;
   onWalletConnect: () => void;
   onWalletApprove: () => void;
   onMoveAssets: () => void;
@@ -28,24 +30,55 @@ const ActionButtons = ({
   isConnected,
   isApproved,
   inProgress,
+  isNotEnoughBalance,
+  isApproveReady,
   onWalletConnect,
   onWalletApprove,
   onMoveAssets,
 }: Props) => {
   const theme = useTheme();
+  const showConnectButton = !isConnected && !inProgress;
   const showApprove =
-    isConnected && isAmountSet && !isApproved && !isEth && !inProgress;
+    isConnected &&
+    isAmountSet &&
+    !isApproved &&
+    !isEth &&
+    !isNotEnoughBalance &&
+    !inProgress &&
+    isApproveReady;
   const showInputAmount = isConnected && !isAmountSet && !inProgress;
-  const showSelectRoute =
-    isConnected && !isRouteIdSelected && isAbleToMove && isAmountSet && !inProgress;
   const showMoveAssets =
-    isConnected && isAbleToMove && isRouteIdSelected && isAmountSet && !inProgress;
+    isConnected &&
+    isAbleToMove &&
+    isRouteIdSelected &&
+    isAmountSet &&
+    !isNotEnoughBalance &&
+    !inProgress;
 
   return (
     <Root>
-      {!isConnected && (
+      {!showApprove && !showInputAmount && !showMoveAssets && !isNotEnoughBalance && !showConnectButton && (
         <Button
           background={theme.buttonDefaultColor}
+          fontWeight={"700"}
+          width={"100%"}
+          text="Loading..."
+          isLoading={inProgress}
+        />
+      )}
+      {isNotEnoughBalance && (
+        <Button
+          background={theme.buttonDefaultColor}
+          fontWeight={"700"}
+          width={"100%"}
+          text={"Insufficient balance"}
+          disabled={inProgress}
+          isLoading={inProgress}
+        />
+      )}
+      {showConnectButton && (
+        <Button
+          background={theme.blueColor}
           fontWeight={"700"}
           onClick={onWalletConnect}
           width={"100%"}
@@ -58,31 +91,22 @@ const ActionButtons = ({
         <Button
           background={theme.buttonDefaultColor}
           fontWeight={"700"}
-          onClick={onWalletConnect}
           width={"100%"}
           text={"Input amount"}
           disabled={inProgress}
+          isLoading={inProgress}
         />
       )}
 
-      {inProgress && isConnected && (
+      {showMoveAssets && (
         <Button
-          background={theme.buttonDefaultColor}
+          background={theme.blueColor}
           fontWeight={"700"}
-          onClick={onWalletConnect}
+          onClick={onMoveAssets}
           width={"100%"}
+          text={"Move"}
           isLoading={inProgress}
           disabled={inProgress}
-        />
-      )}
-
-      {showSelectRoute && (
-        <Button
-          background={theme.buttonDefaultColor}
-          fontWeight={"700"}
-          width={"100%"}
-          text={"Select route"}
-          disabled
         />
       )}
 
@@ -95,17 +119,6 @@ const ActionButtons = ({
           text={"Approve"}
           disabled={inProgress}
           isLoading={inProgress}
-        />
-      )}
-      {showMoveAssets && (
-        <Button
-          background={theme.blueColor}
-          fontWeight={"700"}
-          onClick={onMoveAssets}
-          width={"100%"}
-          text={"Move"}
-          isLoading={inProgress}
-          disabled={inProgress}
         />
       )}
     </Root>

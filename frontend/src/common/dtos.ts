@@ -63,21 +63,14 @@ export interface QuoteResponseDto {
   toChainId: number;
   routes: RouteDto[]
   amount: string;
+  isApproved: boolean;
 }
 
 export interface RouteDto {
   id: number;
   allowanceTarget: string;
-  isApprovalRequired: boolean;
   bridgeRoute: BridgeRouteDto
   buildTx: BuildTxResponseDto;
-}
-
-export interface RouteCalculatedDto {
-  id: number;
-  allowanceTarget: string;
-  isApprovalRequired: boolean;
-  bridgeRoute: BridgeRouteDto
   fees : RouteFeeDto
 }
 
@@ -135,4 +128,16 @@ export interface ChainResponseDto {
   isReceivingEnabled: boolean;
   currency: TokenResponseDto;
   explorers: string[];
+}
+
+export interface TokenBalanceDto {
+  tokenId: number;
+  chainId: number;
+  address: string;
+  name: string;
+  symbol: string;
+  decimals: number;
+  price: number;
+  amount: string;
+  currency: string
 }

@@ -4,6 +4,7 @@ import { Routes, Route } from "react-router-dom";
 import { defaultTheme } from "./theme/theme";
 import { lazyWithPreload } from "../helpers/lazy";
 import { routes } from "../routes";
+import Fallback from "./Fallback";
 
 const Home = lazyWithPreload(
   () => import(/* webpackChunkName: 'LandingModule' */ "../modules/Home/Home")
@@ -18,7 +19,7 @@ const Shell = () => {
   return (
     <>
       <Layout theme={defaultTheme}>
-        <Suspense fallback={"loading..."}>
+        <Suspense fallback={<Fallback />}>
           <Routes>
             <Route path={routes.home} element={<Home />} />
             <Route path={routes.page404} element={<Page404 />} />
