@@ -1,4 +1,9 @@
-import { BuildTxResponseDto, RouteDto, TokenResponseDto } from "../../common/dtos";
+import {
+  BuildTxResponseDto,
+  RouteDto,
+  TokenBalanceDto,
+  TokenResponseDto,
+} from "../../common/dtos";
 import { Asset } from "../../common/enums";
 
 export const mapTokenToDto = (
@@ -24,19 +29,19 @@ export const mapRouteToDto = (
   chainToId: number,
   amountIn: string,
   amountOut: string,
-  buildTx: BuildTxResponseDto
+  buildTx: BuildTxResponseDto,
+  transactionCoastUsd: number
 ): RouteDto => {
   return {
     id: route.id,
     allowanceTarget: allowanceTarget,
-    isApprovalRequired: token.symbol !== Asset.eth.toString(),
     bridgeRoute: {
       bridgeName: bridge.name,
       bridgeId: bridge.id,
       bridgeInfo: {
         displayName: bridge.display_name,
         serviceTime: bridge.processing_time_seconds,
-        isTestnet: bridge.is_testnet
+        isTestnet: bridge.is_testnet,
       },
       fromAsset: token,
       fromChainId: chainFromId,
@@ -44,7 +49,29 @@ export const mapRouteToDto = (
       toChainId: chainToId,
       amountIn: amountIn,
       amountOut: amountOut, //TODO: add function to calculate amountOut
+    
     },
-    buildTx: buildTx
+    buildTx: buildTx,
+    fees: {
+      transactionCoastUsd: transactionCoastUsd
+    }
+  };
+};
+
+export const mapTokenBalanceToDto = (
+  token: TokenResponseDto,
+  price: number,
+  amount: string
+): TokenBalanceDto => {
+  return {
+    tokenId: token.id,
+    chainId: token.chainId,
+    address: token.address,
+    name: token.name,
+    symbol: token.symbol,
+    decimals: token.decimals,
+    price: price,
+    amount: amount,
+    currency: "USD",
   };
 };
