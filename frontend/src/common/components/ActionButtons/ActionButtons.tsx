@@ -62,6 +62,7 @@ const ActionButtons = ({
           background={theme.buttonDefaultColor}
           fontWeight={"700"}
           width={"100%"}
+          text="Loading..."
           isLoading={inProgress}
         />
       )}
