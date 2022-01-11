@@ -1,5 +1,5 @@
 import { useWeb3 } from "@chainsafe/web3-context";
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import styled from "styled-components";
 import { ISelectOption } from "../../common/commonTypes";
 import ActionButtons from "../../common/components/ActionButtons/ActionButtons";
@@ -11,14 +11,13 @@ import AmountInput from "../../common/components/Input";
 import HydraModal from "../../common/components/Modal/HydraModal";
 import TransferChainSelects from "../../common/components/TransferChain/TransferChainSelects";
 import { BuildTxRequestDto, ChainResponseDto } from "../../common/dtos";
-import {
-  getFlexCenter,
-  getVerticalGap,
-} from "../../common/styles";
+import { getFlexCenter, getVerticalGap } from "../../common/styles";
 import useHome from "./useHome";
+import { parseUnits } from "ethers/lib/utils";
+import { ethers } from "ethers";
+import _ from "lodash";
 
 const Root = styled.div``;
-
 
 const Wrapper = styled.div`
   margin: 0 auto;
@@ -61,8 +60,6 @@ const ErrorContainer = styled.div`
 const Home = () => {
   const {
     onConnectWallet,
-    onCheckAllowance,
-    onBuildApproveTxData,
     onApproveWallet,
     onReset,
     getBridgeTxData,
@@ -78,8 +75,9 @@ const Home = () => {
     setTxHash,
     setIsModalOpen,
     setError,
+    buildApproveTx,
+    walletBalances,
     tokens,
-    token,
     isEth,
     chains,
     amountIn,
@@ -100,49 +98,34 @@ const Home = () => {
   } = useHome();
   const { address } = useWeb3();
   const isAbleToMove = isApproved || isEth;
-  const isConnected = !!address
-  
-  useEffect(() => {
-    async function checkAllowance() {
-      await onCheckAllowance(amountIn, chainFrom, token?.address!);
-    }
-    if (isConnected && !isEth) {
-      checkAllowance();
-    }
-  }, [isConnected, asset, amountIn, chainFrom]); // eslint-disable-line react-hooks/exhaustive-deps
+  const isConnected = !!address;
 
-  useEffect(() => {
-    async function getBridgesQuote() {
-  
-      await onGetQuote({
-        recipient: address!,
-        fromAsset: asset,
-        fromChainId: chainFrom,
-        toAsset: asset,
-        toChainId: chainTo,
-        amount: amountIn,
-      });
-    }
-    if (isConnected && isAbleToMove && address) {
-      getBridgesQuote();
-    }
-  }, [asset, chainFrom, chainTo, amountIn, isConnected, isApproved]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [isNotEnoughBalance, setIsNotEnoughBalance] = useState<boolean>(false);
 
-  useEffect(() => {
-    async function getApproveTxData() {
-      await onBuildApproveTxData(chainFrom, token?.address!, amountIn);
-    }
+  const handleQuote = async (
+    recipient: string,
+    fromAsset: number,
+    toAsset: number,
+    fromChainId: number,
+    toChainId: number,
+    amount: number
+  ) => {
+    await onGetQuote({
+      recipient: recipient,
+      fromAsset: fromAsset,
+      fromChainId: fromChainId,
+      toAsset: toAsset,
+      toChainId: toChainId,
+      amount: amount,
+    });
+  };
 
-    if (isConnected && !isEth) {
-      getApproveTxData();
-    }
-  }, [isConnected, amountIn, chainFrom, asset, routeId]); // eslint-disable-line react-hooks/exhaustive-deps
+  const debouncedQuote = useCallback(_.debounce(handleQuote, 300), []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     async function getMoveTxData() {
-   
       const dto: BuildTxRequestDto = {
-        amount: amountIn,
+        amount: amountIn!,
         fromAsset: asset!,
         toAsset: asset!,
         fromChainId: chainFrom!,
@@ -154,51 +137,46 @@ const Home = () => {
       await getBridgeTxData(dto);
     }
 
-    if (address && (isApproved || (isEth && routeId > 0))) {
+    if (address && amountIn && (isApproved || (isEth && routeId > 0))) {
       getMoveTxData();
     }
   }, [isApproved, routeId, amountIn]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleSelectChainFrom = (option: any) => {
-    if (option.value !== chainTo) {
-      setChainFrom(option ? option.value : null);
-    }
-  };
-
-  const handleSelectChainTo = (option: any) => {
-    if (option.value !== chainFrom) {
-      setChainTo(option ? option.value : null);
-    }
-  };
-
-  const handleSelectAsset = (option: any) => {
-    setAsset(option ? option.value : null);
-  };
-
   const handleAmountInChange = (e: any) => {
     const { value } = e.target;
-    if (value >= 0) {
-      setAmountIn(value);
-      setAmountOut(value);
+    let regEx = new RegExp(/^[+]?([0-9]+(?:[\.][0-9]*)?|\.[0-9]+)$/); //eslint-disable-line no-useless-escape
+    if (regEx.test(value)) {
+        setAmountIn(value);
+        setAmountOut(value);
+        checkBalance(value);
+        debouncedQuote(address!, asset, asset, chainFrom, chainTo, value);
     } else {
-      setAmountIn(0);
-      setAmountOut(0.0);
+      const parsedValue = value.replace(/\D/, "");
+      setAmountIn(parsedValue);
+      setAmountOut(parsedValue);
     }
   };
 
-  const handleOnRouteClick = (id: number) => {
-    if (!inProgress) {
-      setRouteId(id);
+  const checkBalance = (value: number) => {
+    try {
+      const tokenBalanceDto = walletBalances?.find(
+        (tokenBalance) => tokenBalance.tokenId === asset
+      );
+      if (tokenBalanceDto && value) {
+        const units = !isEth ? 6 : 18;
+        const parsedAmountToSpend = parseUnits(value.toString(), units);
+        const amountInBig = ethers.BigNumber.from(parsedAmountToSpend);
+        const balanceBig = ethers.BigNumber.from(tokenBalanceDto?.amount!);
+        setIsNotEnoughBalance(amountInBig.gt(balanceBig));
+      }
+    } catch (e) {
+      console.log(e);
     }
-  };
-
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
   };
 
   const handleMoveAssets = async () => {
     try {
-      const signer = provider.getUncheckedSigner();
+      const signer = provider!.getUncheckedSigner();
       const { data, to, from, value } = bridgeTx;
       console.log("bridge tx move:", bridgeTx);
       let dto: any = { data, to, from };
@@ -221,6 +199,39 @@ const Home = () => {
       setError("Something went wrong!");
       setIsErrorOpen(true);
     }
+  };
+
+  const handleSelectChainFrom = (option: any) => {
+    const { value } = option;
+    if (value !== chainTo) {
+      setChainFrom(option ? value : null);
+      debouncedQuote(address!, asset, asset, value, chainTo, amountIn!);
+    }
+  };
+
+  const handleSelectChainTo = (option: any) => {
+    const { value } = option;
+    if (option.value !== chainFrom) {
+      setChainTo(option ? option.value : null);
+      debouncedQuote(address!, asset, asset, chainFrom, value, amountIn!);
+    }
+  };
+
+  const handleSelectAsset = (option: any) => {
+    const { value } = option;
+    setAsset(option ? value : null);
+    checkBalance(amountIn!)
+    debouncedQuote(address!, value, value, chainFrom, chainTo, amountIn!);
+  };
+
+  const handleOnRouteClick = (id: number) => {
+    if (!inProgress) {
+      setRouteId(id);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
   };
 
   const chainsFrom: ISelectOption[] = chains
@@ -281,15 +292,15 @@ const Home = () => {
               />
               <AmountsContainer>
                 <AmountInput
-                  amount={amountIn && amountIn}
-                  min={0}
+                  amount={amountIn}
                   label={"Send"}
-                  onChange={handleAmountInChange}
+                  min={0}
+                  placeholder={"0.0"}
                   disabled={inProgress}
+                  onChange={handleAmountInChange}
                 />
                 <AmountInput
-                  amount={amountOut && amountOut}
-                  step={0.01}
+                  amount={amountOut}
                   placeholder={"0.0"}
                   label={"Receive"}
                   disabled={true}
@@ -303,13 +314,15 @@ const Home = () => {
                 isEth={isEth}
                 isAmountSet={!!amountIn}
                 isAbleToMove={isAbleToMove}
+                isNotEnoughBalance={isNotEnoughBalance}
+                isApproveReady={!!buildApproveTx}
                 onWalletConnect={onConnectWallet}
                 onWalletApprove={onApproveWallet}
                 onMoveAssets={handleMoveAssets}
               />
             </Container>
           </TransferWrapper>
-          {isAbleToMove && !!amountIn && amountIn > 0 && isConnected && (
+          {isAbleToMove && !!amountIn && amountIn > 0 && isConnected && !isNotEnoughBalance && (
             <BridgeRoutes
               inProgress={inProgress}
               selectedRouteId={routeId}
