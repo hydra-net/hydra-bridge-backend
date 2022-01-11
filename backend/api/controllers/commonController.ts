@@ -1,6 +1,6 @@
 import {  Request, Response } from "express";
 import { handleResponse } from "../helpers/controllerHandler";
-import { getChains, getTokens } from "../services/commonService";
+import { getChains, getTokens } from "../services/commonService/commonService";
 
 export const getBridgeTokens = async (
   req: Request,

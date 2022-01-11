@@ -23,6 +23,9 @@ import {
 } from "../helpers/serviceErrorHelper";
 import prisma from "../helpers/db";
 import { mapRouteToDto, mapTokenToDto } from "../helpers/mappers/mapperDto";
+import { erc20Abi } from "../common/abis/erc20Abi";
+import { calculateTransactionCost, getProvider } from "../helpers/web3";
+import { fetchEthUsdPrice } from "./coingeckoService";
 
 require("dotenv").config();
 const { ETH_CONTRACT, HOP_RELAYER, HOP_RELAYER_FEE } = process.env;
@@ -49,11 +52,11 @@ export const getQuote = async (
     isEmpty(dto.fromChainId) ||
     isEmpty(dto.toAsset) ||
     isEmpty(dto.toChainId) ||
-    isEmpty(dto.amount)
+    (isEmpty(dto.amount) && dto.amount !== "0")
   ) {
     return BadRequest();
   }
-
+  
   try {
     const token = await prisma.token.findFirst({
       where: {
@@ -82,6 +85,8 @@ export const getQuote = async (
       return BadRequest("Pick different chains");
     }
 
+    const ethPrice = await fetchEthUsdPrice()
+
     const bridges = await prisma.bridge.findMany({
       where: {
         is_testnet: environment === "dev" ? true : false,
@@ -98,6 +103,7 @@ export const getQuote = async (
     });
 
     const routes: RouteDto[] = [];
+    let isApproved = false;
     for (const route of dbRoutes) {
       const bridge = bridges.find((br) => br.id === route.bridge_id);
       let txDto: BuildTxResponseDto = {
@@ -115,6 +121,7 @@ export const getQuote = async (
           tokenAddress: token.address,
           amount: dto.amount,
         });
+        console.log(txDto)
       }
 
       if (bridge.name === "hop-bridge" || bridge.name === "hop-bridge-goerli") {
@@ -128,6 +135,29 @@ export const getQuote = async (
           chainTo.chainId
         );
       }
+      const isEth = token.symbol === "ETH";
+  
+      if (!isEth) {
+        const rootToken = new ethers.Contract(
+          token.address,
+          erc20Abi,
+          getProvider()
+        );
+
+        const res = await rootToken.functions.allowance(
+          dto.recipient,
+          ETH_CONTRACT
+        );
+
+        const units = 6;
+        const parsedAmountToSpend = parseUnits(dto.amount, units);
+        const amountToSpend = ethers.BigNumber.from(parsedAmountToSpend);
+        const amountAllowed = ethers.BigNumber.from(res.toString());
+        isApproved = amountAllowed.gte(amountToSpend);
+      }
+
+      const txCoast = isApproved || (isEth && txDto.data !== "" ) ? await calculateTransactionCost(txDto) : "0.0";
+  
       const routeDto = mapRouteToDto(
         route,
         ETH_CONTRACT,
@@ -137,10 +167,14 @@ export const getQuote = async (
         chainTo.id,
         dto.amount,
         dto.amount,
-        txDto
+        txDto,
+        parseFloat(txCoast) * ethPrice
       );
 
       routes.push(routeDto);
+      routes.sort(
+        (a, b) => a.fees.transactionCoastUsd - b.fees.transactionCoastUsd
+      );
     }
     const quoteResponse: QuoteResponseDto = {
       fromAsset: mapTokenToDto(token, chainFrom.id),
@@ -149,6 +183,7 @@ export const getQuote = async (
       toChainId: chainTo.id,
       routes: routes,
       amount: dto.amount,
+      isApproved: isApproved,
     };
 
     quoteResp.result = quoteResponse;
@@ -291,7 +326,7 @@ const getPolygonRoute = async (
       "sendEthToPolygon",
       [dto.recipient]
     );
-
+  
     return {
       data: sendEthToPolygonData,
       to: ETH_CONTRACT,
