@@ -21,20 +21,7 @@ require("dotenv").config();
 
 const { USDC_GOERLI } = process.env;
 
-const ERC20_INTERFACE = new Interface([
-  {
-    constant: false,
-    inputs: [
-      { name: "_spender", type: "address" },
-      { name: "_value", type: "uint256" },
-    ],
-    name: "approve",
-    outputs: [{ name: "", type: "bool" }],
-    payable: false,
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-]);
+const ERC20_INTERFACE = new Interface(erc20Abi)
 
 export const getAllowance = async (dto: AllowanceRequestDto) => {
   let allowanceResp: ApiResponseDto = {
