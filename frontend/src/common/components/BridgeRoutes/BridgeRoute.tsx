@@ -1,7 +1,7 @@
 import styled, { useTheme } from "styled-components";
 import { getBridgeIconName } from "../../../helpers/bridgeHelper";
 import { IconKeys } from "../../commonTypes";
-import { RouteCalculatedDto } from "../../dtos";
+import { RouteDto } from "../../dtos";
 import { getFlexCenter, getHorizontalGap, getVerticalGap } from "../../styles";
 import Icon from "../Icon/Icon";
 
@@ -64,7 +64,7 @@ const FeeContainer = styled.div`
 `;
 
 type Props = {
-  route: RouteCalculatedDto;
+  route: RouteDto;
   selectedRouteId: number;
   onRouteSelect: (id: number) => void;
 };

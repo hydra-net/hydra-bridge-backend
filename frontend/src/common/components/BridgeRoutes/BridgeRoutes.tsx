@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import { RouteCalculatedDto } from "../../dtos";
+import { RouteDto } from "../../dtos";
 import {
   getFlexCenter,
   getFlexStart,
@@ -43,7 +43,7 @@ const SpinnerContainer = styled.div`
 
 type Props = {
   inProgress: boolean;
-  routes: RouteCalculatedDto[];
+  routes: RouteDto[];
   selectedRouteId?: number;
   onRouteSelect: (routeId: number) => void;
 };
@@ -66,7 +66,7 @@ const BridgeRoutes = ({
         </SpinnerContainer>
       ) : (
         <Container>
-          {routes.map((route: RouteCalculatedDto) => {
+          {routes.map((route: RouteDto) => {
             return (
               <BridgeRoute
                 key={route.id}
