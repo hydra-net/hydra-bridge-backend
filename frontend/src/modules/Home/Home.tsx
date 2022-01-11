@@ -120,7 +120,7 @@ const Home = () => {
     });
   };
 
-  const debouncedQuote = useCallback(_.debounce(handleQuote, 300), []); // eslint-disable-line react-hooks/exhaustive-deps
+  const debouncedQuote = useCallback(_.debounce(handleQuote, 1000), []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     async function getMoveTxData() {
@@ -220,8 +220,12 @@ const Home = () => {
   const handleSelectAsset = (option: any) => {
     const { value } = option;
     setAsset(option ? value : null);
-    checkBalance(amountIn!)
-    debouncedQuote(address!, value, value, chainFrom, chainTo, amountIn!);
+    if(amountIn > 0)
+    {
+      checkBalance(amountIn!)
+      debouncedQuote(address!, value, value, chainFrom, chainTo, amountIn!);
+    }
+   
   };
 
   const handleOnRouteClick = (id: number) => {
