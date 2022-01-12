@@ -35,13 +35,15 @@ type Props = {
   selectedTokenId: number;
   isLoading?: boolean;
   tokens: TokenResponseDto[];
+  isDisabled: boolean;
   onSelectAsset: (value: any) => void;
 };
 const AssetSelect = ({
+  isLoading,
+  isDisabled,
   selectedTokenId,
   tokens,
   onSelectAsset,
-  isLoading,
 }: Props) => {
   const customStyles: any = {
     control: (provided: CSSProperties, state: any) => ({
@@ -73,7 +75,7 @@ const AssetSelect = ({
           placeholder={null}
           onChange={onSelectAsset}
           components={{ Option: IconOption, SingleValue: ValueOption }}
-          isDisabled={isLoading}
+          isDisabled={isLoading || isDisabled}
         />
       </Container>
     </Root>
