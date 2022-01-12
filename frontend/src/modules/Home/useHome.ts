@@ -70,8 +70,8 @@ export default function useHome() {
       setIsWrongNetwork(true);
       setError("Wrong network switch to goerli!");
       setIsErrorOpen(true);
-    }else {
-      setIsWrongNetwork(false)
+    } else {
+      setIsWrongNetwork(false);
     }
   }, [network, setIsWrongNetwork]);
 
@@ -122,7 +122,6 @@ export default function useHome() {
   };
 
   const onGetQuote = async (dto: QuoteRequestDto) => {
-    setInProgress(true);
     if (
       dto.amount &&
       dto.fromAsset &&
@@ -132,6 +131,7 @@ export default function useHome() {
       dto.recipient &&
       !isWrongNetwork
     ) {
+      setInProgress(true);
       try {
         const res = await getQuote(dto);
         if (res.success) {
