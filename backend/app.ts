@@ -34,7 +34,9 @@ app.use("/api", routes);
 
 app.use("/swagger", swaggerUI.serve, swaggerUI.setup(swaggerDoc));
 
-app.listen(PORT, () => {
-  // console.log("\x1b[34m", `Host: ${URL}:${PORT}/api/v${VERSION}`);
-  // console.log("\x1b[34m", `Docs: ${URL}:${PORT}/swagger`);
-});
+app.listen(PORT);
+
+// app.listen(PORT, () => {
+//   console.log("\x1b[34m", `Host: ${URL}:${PORT}/api/v${VERSION}`);
+//   console.log("\x1b[34m", `Docs: ${URL}:${PORT}/swagger`);
+// });
