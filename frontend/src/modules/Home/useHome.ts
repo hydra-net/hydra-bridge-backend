@@ -124,17 +124,21 @@ export default function useHome() {
         const res = await getQuote(dto);
         if (res.success) {
           if (res.result) {
-            let filteredRoutes = res.result.routes;
             const isEther = res.result.fromAsset.symbol.toLowerCase() === "eth";
-            if (isEther) {
-              filteredRoutes = res.result.routes.filter(
-                (route: RouteDto) =>
-                  route.bridgeRoute.bridgeName !== "hop-bridge-goerli"
-              );
+            if (res.result.routes.length > 0) {
+              let filteredRoutes = res.result.routes;
+
+              if (isEther) {
+                filteredRoutes = res.result.routes.filter(
+                  (route: RouteDto) =>
+                    route.bridgeRoute.bridgeName !== "hop-bridge-goerli"
+                );
+              }
+              const cheapestRoute = filteredRoutes[0];
+              setRouteId(cheapestRoute.id);
+              setBridgeRoutes(filteredRoutes);
             }
-            const cheapestRoute = filteredRoutes[0];
-            setRouteId(cheapestRoute.id);
-            setBridgeRoutes(filteredRoutes);
+
             if (res.result.isApproved) {
               setIsApproved(true);
             } else {
