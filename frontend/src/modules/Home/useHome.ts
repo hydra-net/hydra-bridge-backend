@@ -47,6 +47,7 @@ export default function useHome() {
   const [amountOut, setAmountOut] = useState<number>(0.0);
   const [routeId, setRouteId] = useState<number>(0);
   const [ethPrice, setEthPrice] = useState<number>(0);
+  const [isWrongNetwork, setIsWrongNetwork] = useState<boolean>(false);
 
   //modal
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -54,7 +55,7 @@ export default function useHome() {
   const token = tokens.find((t) => t.id === asset);
   const isEth = token?.symbol.toString().toLowerCase() === "eth";
 
-  const { onboard, address, provider } = useWeb3();
+  const { onboard, address, provider, network } = useWeb3();
 
   useEffect(() => {
     async function getEthPrice() {
@@ -63,6 +64,16 @@ export default function useHome() {
     }
     getEthPrice();
   }, []);
+
+  useEffect(() => {
+    if (network && network !== 5) {
+      setIsWrongNetwork(true);
+      setError("Wrong network switch to goerli!");
+      setIsErrorOpen(true);
+    }else {
+      setIsWrongNetwork(false)
+    }
+  }, [network, setIsWrongNetwork]);
 
   useEffect(() => {
     async function getWalletBalances() {
@@ -118,7 +129,8 @@ export default function useHome() {
       dto.toAsset &&
       dto.toChainId &&
       dto.fromChainId &&
-      dto.recipient
+      dto.recipient &&
+      !isWrongNetwork
     ) {
       try {
         const res = await getQuote(dto);
@@ -179,7 +191,8 @@ export default function useHome() {
         walletAddress &&
         !isEmpty(amount.toString()) &&
         tokenAddress &&
-        !isEth
+        !isEth &&
+        !isWrongNetwork
       ) {
         const res = await buildApprovalTx(
           chainId,
@@ -202,7 +215,7 @@ export default function useHome() {
 
   const onApproveWallet = async () => {
     try {
-      if (buildApproveTx) {
+      if (buildApproveTx && !isWrongNetwork) {
         const signer = provider!.getUncheckedSigner();
         const tx = await signer.sendTransaction(buildApproveTx);
         if (tx) {
@@ -235,16 +248,18 @@ export default function useHome() {
   };
 
   const getBridgeTxData = async (dto: BuildTxRequestDto) => {
-    try {
-      const res = await buildBridgeTx(dto);
-      if (res.success) {
-        console.log("bridge tx data res", res.result);
-        setBridgeTx(res.result);
+    if (!isWrongNetwork) {
+      try {
+        const res = await buildBridgeTx(dto);
+        if (res.success) {
+          console.log("bridge tx data res", res.result);
+          setBridgeTx(res.result);
+        }
+      } catch (e) {
+        console.log(e);
+        setError(e);
+        setIsErrorOpen(true);
       }
-    } catch (e) {
-      console.log(e);
-      setError(e);
-      setIsErrorOpen(true);
     }
   };
 
@@ -276,6 +291,7 @@ export default function useHome() {
     setError,
     setIsApproved,
     walletBalances,
+    isWrongNetwork,
     token,
     chains,
     tokens,

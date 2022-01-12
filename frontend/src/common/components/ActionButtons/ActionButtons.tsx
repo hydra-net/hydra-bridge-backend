@@ -17,6 +17,7 @@ type Props = {
   inProgress: boolean;
   isNotEnoughBalance: boolean;
   isApproveReady: boolean;
+  isWrongNetwork: boolean;
   onWalletConnect: () => void;
   onWalletApprove: () => void;
   onMoveAssets: () => void;
@@ -32,6 +33,7 @@ const ActionButtons = ({
   inProgress,
   isNotEnoughBalance,
   isApproveReady,
+  isWrongNetwork,
   onWalletConnect,
   onWalletApprove,
   onMoveAssets,
@@ -54,7 +56,7 @@ const ActionButtons = ({
     isAmountSet &&
     !isNotEnoughBalance &&
     !inProgress;
-
+const isDisabled = inProgress || isWrongNetwork
   return (
     <Root>
       {!showApprove && !showInputAmount && !showMoveAssets && !isNotEnoughBalance && !showConnectButton && (
@@ -66,7 +68,7 @@ const ActionButtons = ({
           isLoading={inProgress}
         />
       )}
-      {isNotEnoughBalance && (
+      {isNotEnoughBalance && !showInputAmount && (
         <Button
           background={theme.buttonDefaultColor}
           fontWeight={"700"}
@@ -106,7 +108,7 @@ const ActionButtons = ({
           width={"100%"}
           text={"Move"}
           isLoading={inProgress}
-          disabled={inProgress}
+          disabled={isDisabled}
         />
       )}
 
@@ -117,7 +119,7 @@ const ActionButtons = ({
           onClick={onWalletApprove}
           width={"100%"}
           text={"Approve"}
-          disabled={inProgress}
+          disabled={isDisabled}
           isLoading={inProgress}
         />
       )}

@@ -75,6 +75,7 @@ const Home = () => {
     setTxHash,
     setIsModalOpen,
     setError,
+    isWrongNetwork,
     buildApproveTx,
     walletBalances,
     tokens,
@@ -137,7 +138,12 @@ const Home = () => {
       await getBridgeTxData(dto);
     }
 
-    if (address && amountIn && (isApproved || (isEth && routeId > 0))) {
+    if (
+      address &&
+      amountIn &&
+      (isApproved || (isEth && routeId > 0)) &&
+      !isWrongNetwork
+    ) {
       getMoveTxData();
     }
   }, [isApproved, routeId, amountIn]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -146,10 +152,10 @@ const Home = () => {
     const { value } = e.target;
     let regEx = new RegExp(/^[+]?([0-9]+(?:[\.][0-9]*)?|\.[0-9]+)$/); //eslint-disable-line no-useless-escape
     if (regEx.test(value)) {
-        setAmountIn(value);
-        setAmountOut(value);
-        checkBalance(value,asset);
-        debouncedQuote(address!, asset, asset, chainFrom, chainTo, value);
+      setAmountIn(value);
+      setAmountOut(value);
+      checkBalance(value, asset);
+      debouncedQuote(address!, asset, asset, chainFrom, chainTo, value);
     } else {
       const parsedValue = value.replace(/\D/, "");
       setAmountIn(parsedValue);
@@ -157,13 +163,14 @@ const Home = () => {
     }
   };
 
-  const checkBalance = (value: number, asset : number) => {
+  const checkBalance = (value: number, asset: number) => {
     try {
       const tokenBalanceDto = walletBalances?.find(
         (tokenBalance) => tokenBalance.tokenId === asset
       );
-      if (tokenBalanceDto && value) {
-        const units = tokenBalanceDto.symbol.toLocaleLowerCase() !== "eth" ? 6 : 18;
+      if (tokenBalanceDto && value && !isWrongNetwork) {
+        const units =
+          tokenBalanceDto.symbol.toLocaleLowerCase() !== "eth" ? 6 : 18;
         const parsedAmountToSpend = parseUnits(value.toString(), units);
         const amountInBig = ethers.BigNumber.from(parsedAmountToSpend);
         const balanceBig = ethers.BigNumber.from(tokenBalanceDto?.amount!);
@@ -175,29 +182,31 @@ const Home = () => {
   };
 
   const handleMoveAssets = async () => {
-    try {
-      const signer = provider!.getUncheckedSigner();
-      const { data, to, from, value } = bridgeTx;
-      console.log("bridge tx move:", bridgeTx);
-      let dto: any = { data, to, from };
-      if (isEth) {
-        dto.value = value;
-      }
+    if (!isWrongNetwork) {
+      try {
+        const signer = provider!.getUncheckedSigner();
+        const { data, to, from, value } = bridgeTx;
+        console.log("bridge tx move:", bridgeTx);
+        let dto: any = { data, to, from };
+        if (isEth) {
+          dto.value = value;
+        }
 
-      const tx = await signer.sendTransaction(dto);
-      setInProgress(true);
-      setTxHash(tx.hash);
-      setIsModalOpen(true);
-      console.log("Move tx", tx);
-      const receipt = await tx.wait();
-      if (receipt.logs) {
-        onReset();
-        console.log("Move receipt logs", receipt.logs);
+        const tx = await signer.sendTransaction(dto);
+        setInProgress(true);
+        setTxHash(tx.hash);
+        setIsModalOpen(true);
+        console.log("Move tx", tx);
+        const receipt = await tx.wait();
+        if (receipt.logs) {
+          onReset();
+          console.log("Move receipt logs", receipt.logs);
+        }
+      } catch (e: any) {
+        console.log(e);
+        setError("Something went wrong!");
+        setIsErrorOpen(true);
       }
-    } catch (e: any) {
-      console.log(e);
-      setError("Something went wrong!");
-      setIsErrorOpen(true);
     }
   };
 
@@ -220,12 +229,10 @@ const Home = () => {
   const handleSelectAsset = (option: any) => {
     const { value } = option;
     setAsset(option ? value : null);
-    if(amountIn && amountIn > 0)
-    {
-      checkBalance(amountIn,value)
+    if (amountIn && amountIn > 0) {
+      checkBalance(amountIn, value);
       debouncedQuote(address!, value, value, chainFrom, chainTo, amountIn!);
     }
-   
   };
 
   const handleOnRouteClick = (id: number) => {
@@ -268,10 +275,11 @@ const Home = () => {
         <Wrapper>
           <SendWrapper>
             <AssetSelect
+              isLoading={inProgress}
+              isDisabled={isWrongNetwork}
               selectedTokenId={asset}
               tokens={tokens}
               onSelectAsset={handleSelectAsset}
-              isLoading={inProgress}
             />
           </SendWrapper>
           {error && (
@@ -292,7 +300,7 @@ const Home = () => {
                 chainTo={chainTo}
                 onSelectChainFrom={handleSelectChainFrom}
                 onSelectChainTo={handleSelectChainTo}
-                isDisabled={inProgress}
+                isDisabled={inProgress || isWrongNetwork}
               />
               <AmountsContainer>
                 <AmountInput
@@ -300,7 +308,7 @@ const Home = () => {
                   label={"Send"}
                   min={0}
                   placeholder={"0.0"}
-                  disabled={inProgress}
+                  disabled={inProgress || isWrongNetwork}
                   onChange={handleAmountInChange}
                 />
                 <AmountInput
@@ -320,20 +328,26 @@ const Home = () => {
                 isAbleToMove={isAbleToMove}
                 isNotEnoughBalance={isNotEnoughBalance}
                 isApproveReady={!!buildApproveTx}
+                isWrongNetwork={isWrongNetwork}
                 onWalletConnect={onConnectWallet}
                 onWalletApprove={onApproveWallet}
                 onMoveAssets={handleMoveAssets}
               />
             </Container>
           </TransferWrapper>
-          {isAbleToMove && !!amountIn && amountIn > 0 && isConnected && !isNotEnoughBalance && (
-            <BridgeRoutes
-              inProgress={inProgress}
-              selectedRouteId={routeId}
-              routes={bridgeRoutes}
-              onRouteSelect={handleOnRouteClick}
-            />
-          )}
+          {isAbleToMove &&
+            !!amountIn &&
+            amountIn > 0 &&
+            isConnected &&
+            !isNotEnoughBalance &&
+            !isWrongNetwork && (
+              <BridgeRoutes
+                inProgress={inProgress}
+                selectedRouteId={routeId}
+                routes={bridgeRoutes}
+                onRouteSelect={handleOnRouteClick}
+              />
+            )}
         </Wrapper>
       </Root>
 
