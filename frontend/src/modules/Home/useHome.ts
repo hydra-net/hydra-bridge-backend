@@ -227,7 +227,7 @@ export default function useHome() {
       }
     } catch (e: any) {
       console.log(e);
-      setError(e);
+      setError("Something went wrong!");
       setIsErrorOpen(true);
     } finally {
       setInProgress(false);
