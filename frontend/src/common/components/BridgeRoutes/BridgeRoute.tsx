@@ -91,7 +91,7 @@ const BridgeRoute = ({ route, selectedRouteId, onRouteSelect }: Props) => {
     <Route isSelected={isSelected} onClick={() => onRouteSelect(route.id)}>
       <RouteContent>
         <FeeContainer>
-          {" Gas fee: $" +
+          {" Gas fee: ~$" +
             (Math.round(route.fees.transactionCoastUsd * 100) / 100).toFixed(
               2
             ) +
