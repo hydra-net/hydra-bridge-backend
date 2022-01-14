@@ -4,7 +4,6 @@ import {
   TokenBalanceDto,
   TokenResponseDto,
 } from "../../common/dtos";
-import { Asset } from "../../common/enums";
 
 export const mapTokenToDto = (
   token: any,

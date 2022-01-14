@@ -57,6 +57,7 @@ export interface GetTxRequestDto {
   tokenSymbol: string
   tokenAddress: string
   amount: string;
+  decimals?: number;
 }
 
 export interface QuoteRequestDto {
@@ -156,4 +157,12 @@ export interface TokenBalanceDto {
 export interface TokenPriceDto {
   symbol: string;
   price: number;
+}
+
+export interface IsApprovedDto {
+  tokenAddress: string;
+  allowanceContractAddr: string;
+  amount: string;
+  recipient: string;
+  decimals: number
 }
