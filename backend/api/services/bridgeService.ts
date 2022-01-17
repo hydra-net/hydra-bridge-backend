@@ -26,12 +26,11 @@ import { calculateTransactionCost, getIsApproved } from "../helpers/web3";
 import { fetchEthUsdPrice } from "./coingeckoService";
 import { getHopAmountOut, getHopChain } from "../helpers/hopHelper";
 import { parseUnits } from "ethers/lib/utils";
+import { HYDRA_BRIDGE_INTERFACE } from "../common/constants";
 
 require("dotenv").config();
 const { ETH_CONTRACT, HOP_RELAYER, HOP_RELAYER_FEE, ETH_NETWORK } = process.env;
 var environment = process.env.NODE_ENV || "dev";
-
-const HYDRA_BRIDGE_INTERFACE = new Interface(hydraBridge);
 
 export const getQuote = async (
   dto: QuoteRequestDto

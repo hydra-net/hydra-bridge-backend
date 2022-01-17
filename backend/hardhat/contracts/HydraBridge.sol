@@ -16,15 +16,15 @@ contract HydraBridge is Ownable, Pausable {
   using SafeERC20 for IERC20;
     
     /// Address of polygon bridge root chain manager contract
-    address _polygonRootChainManager;
+    address public _polygonRootChainManager;
 
 
     /// Address of polygon bridge erc20Predicate contract
-    address _erc20Predicate;
+    address public _erc20Predicate;
 
      
     /// Address of hop bridge contract
-    address _hopBridge;
+    address public _hopBridge;
 
     event MoveCompleted(address, uint256);
 
