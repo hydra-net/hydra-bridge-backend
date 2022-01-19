@@ -21,33 +21,38 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
  * @type import('hardhat/config').HardhatUserConfig
  */
 module.exports = {
-  solidity: "0.8.4",
+  solidity: {
+    compilers: [
+      {
+        version: "0.8.4",
+      }
+    ],
+  },
   defaultNetwork: "hardhat",
-  paths:
-  {
-    root: './hardhat'
+  paths: {
+    root: "./hardhat",
   },
   networks: {
     [ETH_NETWORK]: {
       url: `https://${ETH_NETWORK}.infura.io/v3/${ETH_INFURA_ID}`,
       accounts: {
-        mnemonic: ETH_MNEMONIC
+        mnemonic: ETH_MNEMONIC,
       },
     },
     goerli: {
       url: `https://goerli.infura.io/v3/${ETH_INFURA_ID}`,
       chainId: 5,
       accounts: {
-        mnemonic: ETH_MNEMONIC
+        mnemonic: ETH_MNEMONIC,
       },
     },
     hardhat: {
-      chainId: 1337
+      chainId: 1337,
     },
     localhost: {
       chainId: 1337,
       accounts: {
-        mnemonic: ETH_MNEMONIC
+        mnemonic: ETH_MNEMONIC,
       },
     },
   },
