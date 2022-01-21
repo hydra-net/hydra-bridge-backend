@@ -92,9 +92,7 @@ const BridgeRoute = ({ route, selectedRouteId, onRouteSelect }: Props) => {
       <RouteContent>
         <FeeContainer>
           {" Gas fee: ~$" +
-            (Math.round(route.fees.transactionCoastUsd * 100) / 100).toFixed(
-              2
-            ) +
+            (Math.round(route.transactionCoastUsd * 100) / 100).toFixed(2) +
             " | " +
             "~" +
             route.bridgeRoute.bridgeInfo.serviceTime / 60 +

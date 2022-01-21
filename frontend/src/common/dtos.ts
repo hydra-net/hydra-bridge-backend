@@ -5,7 +5,6 @@ export interface BaseListResponseDto<T> {
   result: T[];
 }
 
-
 export interface BaseResponseDto {
   success: boolean;
   result: any;
@@ -61,7 +60,7 @@ export interface QuoteResponseDto {
   fromChainId: number;
   toAsset: TokenResponseDto;
   toChainId: number;
-  routes: RouteDto[]
+  routes: RouteDto[];
   amount: string;
   isApproved: boolean;
 }
@@ -69,37 +68,33 @@ export interface QuoteResponseDto {
 export interface RouteDto {
   id: number;
   allowanceTarget: string;
-  bridgeRoute: BridgeRouteDto
+  bridgeRoute: BridgeRouteDto;
   buildTx: BuildTxResponseDto;
-  fees : RouteFeeDto
+  transactionCoastUsd: number;
 }
 
 export interface BridgeRouteDto {
-  bridgeName: string
-  bridgeId: number
-  bridgeInfo: BridgeInfoDto
-  fromAsset: TokenResponseDto
-  fromChainId: number
-  toAsset: TokenResponseDto
-  toChainId: number
+  bridgeName: string;
+  bridgeId: number;
+  bridgeInfo: BridgeInfoDto;
+  fromAsset: TokenResponseDto;
+  fromChainId: number;
+  toAsset: TokenResponseDto;
+  toChainId: number;
   amountIn: string;
   amountOut: string;
 }
 
 export interface BridgeInfoDto {
   serviceTime: number;
-  displayName: string
-  isTestnet: boolean
-}
-
-export interface RouteFeeDto {
-  transactionCoastUsd: number
+  displayName: string;
+  isTestnet: boolean;
 }
 
 export interface GasLimitDto {
- amount: string
- assetAddress: string
- chainId: number
+  amount: string;
+  assetAddress: string;
+  chainId: number;
 }
 
 export interface BuildTxResponseDto {
@@ -139,5 +134,5 @@ export interface TokenBalanceDto {
   decimals: number;
   price: number;
   amount: string;
-  currency: string
+  currency: string;
 }
