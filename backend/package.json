@@ -30,7 +30,7 @@
     "winston": "^3.3.3"
   },
   "scripts": {
-    "start": "nodemon app.ts ",
+    "start": "nodemon app.ts",
     "lint": "eslint .  --ext .ts",
     "lint-fix": "eslint --fix .  --ext .ts"
   },
