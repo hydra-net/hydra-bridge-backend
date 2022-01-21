@@ -27,17 +27,13 @@ app.use(
     msg: "HTTP  ",
     expressFormat: true,
     colorize: false,
-    ignoreRoute: function (req, res) {
-      return false;
-    },
+    ignoreRoute: () => false,
   })
 );
 
 app.use("/api", routes);
 
 app.use("/swagger", swaggerUI.serve, swaggerUI.setup(swaggerDoc));
-
-// app.listen(PORT);
 
 app.listen(PORT, () => {
   if (NODE_ENV === "dev") {
