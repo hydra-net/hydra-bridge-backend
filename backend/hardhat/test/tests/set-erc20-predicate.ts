@@ -1,9 +1,8 @@
 import { expect } from "chai";
-import {
-  erc20Predicate,
-} from "../shared/constants";
+import { Contract } from "ethers";
+import { erc20Predicate } from "../shared/constants";
 
-export async function shouldSetErc20Predicate(hydraBridge: any) {
+export async function shouldSetErc20Predicate(hydraBridge: Contract) {
   const setErc20Predicate = await hydraBridge.setErc20Predicate(erc20Predicate);
 
   // wait until the transaction is mined

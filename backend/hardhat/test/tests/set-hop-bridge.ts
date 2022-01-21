@@ -1,7 +1,8 @@
 import { expect } from "chai";
+import { Contract } from "ethers";
 import { hopBridge } from "../shared/constants";
 
-export async function shouldSetHopBridge(hydraBridge: any) {
+export async function shouldSetHopBridge(hydraBridge: Contract) {
   const setHopBridge = await hydraBridge.setHopBridge(hopBridge);
 
   // wait until the transaction is mined

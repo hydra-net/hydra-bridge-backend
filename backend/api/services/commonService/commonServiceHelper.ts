@@ -1,6 +1,7 @@
 import { TokenResponseDto } from "../../common/dtos";
 import prisma from "../../helpers/db";
 import { mapTokenToDto } from "../../helpers/mappers/mapperDto";
+import { Token } from "@prisma/client";
 
 export const getTokensByChainId = async (
   chainId: number
@@ -38,7 +39,7 @@ export const getTokensByChainId = async (
 
     for (const chainToken of chainTokens) {
       const dto: TokenResponseDto = mapTokenToDto(
-        chainToken.token,
+        chainToken.token as Token,
         chainToken.chain.id
       );
       tokens.push(dto);

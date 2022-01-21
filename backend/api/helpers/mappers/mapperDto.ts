@@ -4,9 +4,10 @@ import {
   TokenBalanceResponseDto,
   TokenResponseDto,
 } from "../../common/dtos";
+import { Token, Bridge, Route } from "@prisma/client";
 
 export const mapTokenToDto = (
-  token: any,
+  token: Token,
   chainId: number
 ): TokenResponseDto => {
   return {
@@ -20,9 +21,9 @@ export const mapTokenToDto = (
 };
 
 export const mapRouteToDto = (
-  route: any,
+  route: Route,
   allowanceTarget: string,
-  bridge: any,
+  bridge: Bridge,
   token: TokenResponseDto,
   chainFromId: number,
   chainToId: number,

@@ -1,4 +1,4 @@
-import chai, { expect } from "chai";
+import chai from "chai";
 import { solidity } from "ethereum-waffle";
 import { shouldApproveContract } from "./tests/approve-contract";
 import { shouldSendEthPolygon } from "./tests/send-eth-polygon";
@@ -11,8 +11,6 @@ import {
   deployHydraBridge,
   deployRootManager,
 } from "./shared/deployers";
-import { ethers } from "hardhat";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { shouldSendTokenPolygon } from "./tests/send-token-polygon";
 import { shouldSendTokenHop } from "./tests/send-token-to-hop";
 import { shouldSendEthToHop } from "./tests/send-eth-to-hop";
@@ -23,10 +21,8 @@ import { shouldRescueFunds } from "./tests/should-rescue-funds";
 chai.use(solidity);
 
 describe("Run all tests", function () {
-  let erc20, hydraBridge, rootManager, hopBridge, _owner: SignerWithAddress;
+  let erc20, hydraBridge, rootManager, hopBridge;
   before(async function () {
-    const [owner] = await ethers.getSigners();
-    _owner = owner;
     erc20 = await deployErc20();
     rootManager = await deployRootManager();
     hopBridge = await deployHopBridge();
