@@ -31,7 +31,7 @@ app.use(
   })
 );
 
-app.use("/api", routes);
+app.use(`/api/v${VERSION}`, routes);
 
 app.use("/swagger", swaggerUI.serve, swaggerUI.setup(swaggerDoc));
 
