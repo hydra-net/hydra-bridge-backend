@@ -15,7 +15,7 @@ export const getBridgeTokens = async (
     `${REACT_APP_API_URL}/common/tokens?chainId=${chainId}`
   );
 
-  return response.result.data;
+  return response.result;
 };
 
 export const getAllChains = async (): Promise<
@@ -24,5 +24,5 @@ export const getAllChains = async (): Promise<
   const response: any = await fetchWrapper.get(
     `${REACT_APP_API_URL}/common/chains`
   );
-  return response.result.data;
+  return response.result;
 };
