@@ -2,8 +2,10 @@ import { ethers } from "ethers";
 import { parseUnits } from "ethers/lib/utils";
 import Web3 from "web3";
 import { erc20Abi } from "../common/abis/erc20Abi";
-import { BuildTxResponseDto, IsApprovedDto } from "../common/dtos";
-require("dotenv").config();
+import { BuildBridgeTxResponseDto, IsApprovedDto } from "../common/dtos";
+import * as dotenv from "dotenv";
+
+dotenv.config({ path: __dirname + "/.env" });
 const { ETH_INFURA_ID, ETH_NETWORK, ETH_CHAIN_ID } = process.env;
 
 export const getProviderUrl = () => {
@@ -29,24 +31,24 @@ export const getSigner = () => {
 };
 
 export const encodeParameter = (
-  type: string = "uint256",
+  paramType: string = "uint256",
   amount: string | number | undefined
 ) => {
   return amount
-    ? web3Initialised.eth.abi.encodeParameter(type, amount)
+    ? web3Initialised.eth.abi.encodeParameter(paramType, amount)
     : undefined;
 };
 
-export const decodeParameter = (type: string = "uint256", data: any) => {
+export const decodeParameter = (type: string = "uint256", data: string) => {
   return data ? web3Initialised.eth.abi.decodeParameter(type, data) : undefined;
 };
 
 export const calculateTransactionCost = async (
-  params: BuildTxResponseDto
+  params: BuildBridgeTxResponseDto
 ): Promise<string> => {
   const gasPrice = await web3Initialised.eth.getGasPrice();
   const gasLimit = await web3Initialised.eth.estimateGas(params);
-  var transactionFee = Number.parseInt(gasPrice) * gasLimit;
+  const transactionFee = Number.parseInt(gasPrice) * gasLimit;
   return ethers.utils.formatEther(transactionFee);
 };
 

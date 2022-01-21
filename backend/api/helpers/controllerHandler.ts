@@ -2,15 +2,13 @@ import { ServiceResponseDto } from "../common/dtos";
 import { Response } from "express";
 import { consoleLogger, hydraLogger } from "./hydraLogger";
 
-export const handleResponse = (
+export const handleResponse = <T>(
   resp: Response,
-  result: ServiceResponseDto
-): Response => {
+  result: ServiceResponseDto<T>
+) => {
   try {
     if (result.status === 200) {
-      resp.status(200).json({
-        data: result.data,
-      });
+      resp.status(200).json(result.data);
     }
 
     if (result.status === 400) {

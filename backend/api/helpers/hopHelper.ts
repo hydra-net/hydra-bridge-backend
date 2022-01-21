@@ -1,7 +1,6 @@
 import { Chain, Hop } from "@hop-protocol/sdk";
 import { BigNumber } from "ethers";
 import { getProvider } from "./web3";
-require("dotenv").config();
 
 export const getHopAmountOut = async (
   networkName: string,

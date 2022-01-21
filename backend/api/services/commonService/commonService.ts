@@ -6,30 +6,28 @@ import {
 } from "../../common/dtos";
 import prisma from "../../helpers/db";
 import { consoleLogger, hydraLogger } from "../../helpers/hydraLogger";
-import { BadRequest, ServerError } from "../../helpers/serviceErrorHelper";
-import { isEmpty } from "../../helpers/stringHelper";
+import { ServerError } from "../../helpers/serviceErrorHelper";
 import { getTokensByChainId } from "./commonServiceHelper";
-require("dotenv").config();
+import * as dotenv from "dotenv";
+
+dotenv.config({ path: __dirname + "/.env" });
 
 export const getTokens = async (
   chainId: string
-): Promise<ServiceResponseDto> => {
-  let response: ServiceResponseDto = {
-    status: 200,
-    data: null,
-  };
-
-  let apiResponse: ApiResponseDto = {
+): Promise<ServiceResponseDto<TokenResponseDto[]>> => {
+  const apiResponse: ApiResponseDto<TokenResponseDto[]> = {
     success: true,
     result: [],
   };
 
-  if (isEmpty(chainId)) {
-    return BadRequest();
-  }
+  const response: ServiceResponseDto<TokenResponseDto[]> = {
+    status: 200,
+    data: apiResponse,
+  };
 
   try {
-    apiResponse.result = await getTokensByChainId(chainId);
+    const parsedChainId = parseInt(chainId);
+    apiResponse.result = await getTokensByChainId(parsedChainId);
     response.data = apiResponse;
     return response;
   } catch (e) {
@@ -39,15 +37,17 @@ export const getTokens = async (
   }
 };
 
-export const getChains = async (): Promise<ServiceResponseDto> => {
-  let response: ServiceResponseDto = {
-    status: 200,
-    data: null,
-  };
-
-  let apiResponse: ApiResponseDto = {
+export const getChains = async (): Promise<
+  ServiceResponseDto<ChainResponseDto[]>
+> => {
+  const apiResponse: ApiResponseDto<ChainResponseDto[]> = {
     success: true,
     result: [],
+  };
+
+  const response: ServiceResponseDto<ChainResponseDto[]> = {
+    status: 200,
+    data: apiResponse,
   };
 
   try {

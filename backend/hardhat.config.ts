@@ -1,6 +1,8 @@
 import { task } from "hardhat/config";
 import "@nomiclabs/hardhat-waffle";
-require("dotenv").config();
+import * as dotenv from "dotenv";
+
+dotenv.config({ path: __dirname + "/.env" });
 
 const { ETH_NETWORK, ETH_INFURA_ID, ETH_MNEMONIC } = process.env;
 
@@ -25,7 +27,7 @@ module.exports = {
     compilers: [
       {
         version: "0.8.4",
-      }
+      },
     ],
   },
   defaultNetwork: "hardhat",

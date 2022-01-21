@@ -1,10 +1,9 @@
 import {
   ApiResponseDto,
   ServiceResponseDto,
-  TokenBalanceDto,
+  TokenBalanceResponseDto,
 } from "../common/dtos";
-import { isEmpty } from "../helpers/stringHelper";
-import { BadRequest, ServerError } from "../helpers/serviceErrorHelper";
+import { ServerError } from "../helpers/serviceErrorHelper";
 import { consoleLogger, hydraLogger } from "../helpers/hydraLogger";
 import { ethers } from "ethers";
 import { erc20Abi } from "../common/abis/erc20Abi";
@@ -15,23 +14,20 @@ import { fetchAllTokenPrices } from "./coingeckoService";
 import Web3 from "web3";
 
 export const getWalletBalances = async (address: string, chainId: string) => {
-  let balancesResponse: ApiResponseDto = {
+  const balancesResponse: ApiResponseDto<TokenBalanceResponseDto[]> = {
     success: true,
     result: null,
   };
-  let response: ServiceResponseDto = {
+  const response: ServiceResponseDto<TokenBalanceResponseDto[]> = {
     status: 200,
-    data: null,
+    data: balancesResponse,
   };
 
   try {
-    if (isEmpty(address)) {
-      return BadRequest();
-    }
-
-    const tokens = await getTokensByChainId(chainId);
+    const parsedChainId = parseInt(chainId);
+    const tokens = await getTokensByChainId(parsedChainId);
     const provider = getProvider();
-    const tokenBalances: TokenBalanceDto[] = [];
+    const tokenBalances: TokenBalanceResponseDto[] = [];
     const tokenPrices = await fetchAllTokenPrices();
     for (const token of tokens) {
       const tokenPrice = tokenPrices.find(

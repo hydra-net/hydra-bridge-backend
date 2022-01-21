@@ -3,13 +3,11 @@ import prisma from "../../helpers/db";
 import { mapTokenToDto } from "../../helpers/mappers/mapperDto";
 
 export const getTokensByChainId = async (
-  chainId: string
+  chainId: number
 ): Promise<TokenResponseDto[]> => {
-
-  const parsedChainId = Number.parseInt(chainId);
   const chain = await prisma.chain.findFirst({
     where: {
-      chainId: parsedChainId,
+      chainId: chainId,
     },
   });
 
@@ -38,9 +36,11 @@ export const getTokensByChainId = async (
       },
     });
 
-    for (let i = 0; i < chainTokens.length; i++) {
-      const item = chainTokens[i];
-      const dto: TokenResponseDto = mapTokenToDto(item.token, item.chain.id);
+    for (const chainToken of chainTokens) {
+      const dto: TokenResponseDto = mapTokenToDto(
+        chainToken.token,
+        chainToken.chain.id
+      );
       tokens.push(dto);
     }
   }

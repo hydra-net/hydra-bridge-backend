@@ -3,54 +3,45 @@ import {
   AllowanceRequestDto,
   ApiResponseDto,
   ServiceResponseDto,
+  AllowanceResponseDto,
+  BuildAllowanceResponseDto,
 } from "../common/dtos";
 import { getProvider } from "../helpers/web3";
-import { ethers } from "ethers";
+import { BigNumber, ethers } from "ethers";
 import { erc20Abi } from "../common/abis/erc20Abi";
 import { Interface } from "@ethersproject/abi";
 import { parseUnits } from "ethers/lib/utils";
-import { isEmpty } from "../helpers/stringHelper";
 import { consoleLogger, hydraLogger } from "../helpers/hydraLogger";
 import prisma from "../helpers/db";
-import {
-  BadRequest,
-  NotFound,
-  ServerError,
-} from "../helpers/serviceErrorHelper";
-require("dotenv").config();
+import { NotFound, ServerError } from "../helpers/serviceErrorHelper";
+import * as dotenv from "dotenv";
+
+dotenv.config({ path: __dirname + "/.env" });
 
 const { USDC_GOERLI } = process.env;
 
-const ERC20_INTERFACE = new Interface(erc20Abi)
+const ERC20_INTERFACE = new Interface(erc20Abi);
 
 export const getAllowance = async (dto: AllowanceRequestDto) => {
-  let allowanceResp: ApiResponseDto = {
+  const allowanceResp: ApiResponseDto<AllowanceResponseDto> = {
     success: true,
     result: {
-      value: 0,
+      value: "0",
       tokenAddress: "",
     },
   };
-  let response: ServiceResponseDto = {
+  const response: ServiceResponseDto<AllowanceResponseDto> = {
     status: 200,
-    data: null,
+    data: allowanceResp,
   };
 
   try {
-    if (
-      isEmpty(dto.chainId) ||
-      isEmpty(dto.owner) ||
-      isEmpty(dto.spender) ||
-      isEmpty(dto.tokenAddress)
-    ) {
-      return BadRequest();
-    }
     const chain = await prisma.chain.findFirst({
       where: { chainId: Number.parseInt(dto.chainId) },
     });
 
     const token = await prisma.token.findFirst({
-      where: { address:  dto.tokenAddress },
+      where: { address: dto.tokenAddress },
     });
 
     if (!chain || !token) {
@@ -63,9 +54,12 @@ export const getAllowance = async (dto: AllowanceRequestDto) => {
       getProvider()
     );
 
-    const res = await rootToken.functions.allowance(dto.owner, dto.spender);
+    const res: BigNumber = await rootToken.functions.allowance(
+      dto.owner,
+      dto.spender
+    );
     allowanceResp.result.tokenAddress = token.address;
-    allowanceResp.result.value = res.toString()
+    allowanceResp.result.value = res.toString();
     response.data = allowanceResp;
     return response;
   } catch (e) {
@@ -77,8 +71,8 @@ export const getAllowance = async (dto: AllowanceRequestDto) => {
 
 export const buildTx = async (
   dto: BuildAllowanceRequestDto
-): Promise<ServiceResponseDto> => {
-  let buildAllowanceResp: ApiResponseDto = {
+): Promise<ServiceResponseDto<BuildAllowanceResponseDto>> => {
+  const buildAllowanceResp: ApiResponseDto<BuildAllowanceResponseDto> = {
     success: true,
     result: {
       data: "",
@@ -87,28 +81,18 @@ export const buildTx = async (
     },
   };
 
-  let response: ServiceResponseDto = {
+  const response: ServiceResponseDto<BuildAllowanceResponseDto> = {
     status: 200,
     data: buildAllowanceResp,
   };
 
   try {
-    if (
-      isEmpty(dto.chainId) ||
-      isEmpty(dto.owner) ||
-      isEmpty(dto.spender) ||
-      isEmpty(dto.tokenAddress) ||
-      isEmpty(dto.amount)
-    ) {
-      return BadRequest();
-    }
-
     const chain = await prisma.chain.findFirst({
       where: { chainId: Number.parseInt(dto.chainId) },
     });
 
     const token = await prisma.token.findFirst({
-      where: { address:  dto.tokenAddress },
+      where: { address: dto.tokenAddress },
     });
 
     if (!chain || !token) {

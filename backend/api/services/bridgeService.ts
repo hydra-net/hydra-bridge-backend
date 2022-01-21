@@ -1,19 +1,16 @@
 import {
   ApiResponseDto,
-  BuildTxRequestDto,
-  BuildTxResponseDto,
-  GetTxRequestDto,
+  BuildBridgeTxRequestDto,
+  BuildBridgeTxResponseDto,
+  GetBridgeTxRequestDto,
   QuoteRequestDto,
   QuoteResponseDto,
-  RouteDto,
+  RouteResponseDto,
   ServiceResponseDto,
 } from "../common/dtos";
 import { Asset } from "../common/enums";
-import { Interface } from "@ethersproject/abi";
-import { BigNumber, ethers } from "ethers";
-import { hydraBridge } from "./contractInterfaces/contractInterfaces";
+import { ethers } from "ethers";
 import { getTimestamp } from "../helpers/time";
-import { isEmpty } from "../helpers/stringHelper";
 import { consoleLogger, hydraLogger } from "../helpers/hydraLogger";
 import {
   BadRequest,
@@ -27,34 +24,24 @@ import { fetchEthUsdPrice } from "./coingeckoService";
 import { getHopAmountOut, getHopChain } from "../helpers/hopHelper";
 import { parseUnits } from "ethers/lib/utils";
 import { HYDRA_BRIDGE_INTERFACE } from "../common/constants";
+import * as dotenv from "dotenv";
+dotenv.config({ path: __dirname + "/.env" });
 
-require("dotenv").config();
 const { ETH_CONTRACT, HOP_RELAYER, HOP_RELAYER_FEE, ETH_NETWORK } = process.env;
-var environment = process.env.NODE_ENV || "dev";
+const environment = process.env.NODE_ENV || "dev";
 
 export const getQuote = async (
   dto: QuoteRequestDto
-): Promise<ServiceResponseDto> => {
-  let quoteResp: ApiResponseDto = {
+): Promise<ServiceResponseDto<QuoteResponseDto>> => {
+  const quoteResp: ApiResponseDto<QuoteResponseDto> = {
     success: true,
     result: null,
   };
 
-  let response: ServiceResponseDto = {
+  const response: ServiceResponseDto<QuoteResponseDto> = {
     status: 200,
-    data: null,
+    data: quoteResp,
   };
-
-  if (
-    isEmpty(dto.recipient) ||
-    isEmpty(dto.fromAsset) ||
-    isEmpty(dto.fromChainId) ||
-    isEmpty(dto.toAsset) ||
-    isEmpty(dto.toChainId) ||
-    (isEmpty(dto.amount) && dto.amount !== "0")
-  ) {
-    return BadRequest();
-  }
 
   try {
     const token = await prisma.token.findFirst({
@@ -101,17 +88,17 @@ export const getQuote = async (
       },
     });
 
-    const routes: RouteDto[] = [];
+    const routes: RouteResponseDto[] = [];
     let isApproved = false;
     let amountOut: string = dto.amount;
     for (const route of dbRoutes) {
       const bridge = bridges.find((br) => br.id === route.bridge_id);
-      let txDto: BuildTxResponseDto = {
+      let txDto: BuildBridgeTxResponseDto = {
         data: "",
         to: "",
         from: "",
       };
-      const txRouteDto: GetTxRequestDto = {
+      const txRouteDto: GetBridgeTxRequestDto = {
         recipient: dto.recipient,
         amount: dto.amount,
         tokenAddress: token.address,
@@ -167,9 +154,7 @@ export const getQuote = async (
       );
 
       routes.push(routeDto);
-      routes.sort(
-        (a, b) => a.fees.transactionCoastUsd - b.fees.transactionCoastUsd
-      );
+      routes.sort((a, b) => a.transactionCoastUsd - b.transactionCoastUsd);
     }
     const quoteResponse: QuoteResponseDto = {
       fromAsset: mapTokenToDto(token, chainFrom.id),
@@ -192,29 +177,19 @@ export const getQuote = async (
 };
 
 export const buildTx = async (
-  dto: BuildTxRequestDto
-): Promise<ServiceResponseDto> => {
-  let buildResp: ApiResponseDto = {
+  dto: BuildBridgeTxRequestDto
+): Promise<ServiceResponseDto<BuildBridgeTxResponseDto>> => {
+  const buildResp: ApiResponseDto<BuildBridgeTxResponseDto> = {
     success: true,
     result: { data: "", to: "", from: "" },
   };
 
-  let response: ServiceResponseDto = {
+  const response: ServiceResponseDto<BuildBridgeTxResponseDto> = {
     status: 200,
     data: buildResp,
   };
 
   try {
-    if (
-      isEmpty(dto.fromAsset) ||
-      isEmpty(dto.fromChainId) ||
-      isEmpty(dto.toAsset) ||
-      isEmpty(dto.toChainId) ||
-      isEmpty(dto.amount) ||
-      isEmpty(dto.recipient)
-    ) {
-      return BadRequest();
-    }
     if (dto.fromAsset !== dto.toAsset && dto.fromChainId === dto.toChainId) {
       return BadRequest();
     }
@@ -259,7 +234,7 @@ export const buildTx = async (
       return response;
     }
 
-    const txRouteDto: GetTxRequestDto = {
+    const txRouteDto: GetBridgeTxRequestDto = {
       recipient: dto.recipient,
       amount: dto.amount,
       tokenAddress: token.address,
@@ -291,15 +266,15 @@ export const buildTx = async (
 };
 
 const getPolygonRoute = async (
-  dto: GetTxRequestDto
-): Promise<BuildTxResponseDto> => {
+  dto: GetBridgeTxRequestDto
+): Promise<BuildBridgeTxResponseDto> => {
   if (dto.tokenSymbol.toLowerCase() !== Asset[Asset.eth]) {
     const sendToPolygonData = HYDRA_BRIDGE_INTERFACE.encodeFunctionData(
       "sendToPolygon",
       [
         dto.recipient,
         dto.tokenAddress,
-        parseUnits(dto.amount, dto.decimals!).toString(),
+        parseUnits(dto.amount, dto.decimals).toString(),
       ]
     );
     return {
@@ -323,9 +298,9 @@ const getPolygonRoute = async (
 };
 
 const getHopRoute = async (
-  dto: GetTxRequestDto,
+  dto: GetBridgeTxRequestDto,
   chainToId: number
-): Promise<BuildTxResponseDto> => {
+): Promise<BuildBridgeTxResponseDto> => {
   if (dto.tokenSymbol.toLowerCase() !== Asset[Asset.eth]) {
     const sendToL2HopData = HYDRA_BRIDGE_INTERFACE.encodeFunctionData(
       "sendToL2Hop",
@@ -333,7 +308,7 @@ const getHopRoute = async (
         dto.tokenAddress,
         dto.recipient,
         chainToId,
-        parseUnits(dto.amount, dto.decimals!).toString(),
+        parseUnits(dto.amount, dto.decimals).toString(),
         0,
         getTimestamp(30),
         HOP_RELAYER,
