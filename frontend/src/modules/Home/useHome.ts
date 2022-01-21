@@ -10,7 +10,6 @@ import {
   TokenResponseDto,
 } from "../../common/dtos";
 import { getAllChains, getBridgeTokens } from "../../api/commonService";
-import { fetchEthUsdPrice } from "../../api/coingeckoService";
 import { useWeb3 } from "@chainsafe/web3-context";
 import { getUserAddressBalances } from "../../api/balancesService";
 import { isEmpty } from "../../helpers/stringHelper";
@@ -46,7 +45,6 @@ export default function useHome() {
   const [amountIn, setAmountIn] = useState<number>(0.0);
   const [amountOut, setAmountOut] = useState<number>(0.0);
   const [routeId, setRouteId] = useState<number>(0);
-  const [ethPrice, setEthPrice] = useState<number>(0);
   const [isWrongNetwork, setIsWrongNetwork] = useState<boolean>(false);
 
   //modal
@@ -56,14 +54,6 @@ export default function useHome() {
   const isEth = token?.symbol.toString().toLowerCase() === "eth";
 
   const { onboard, address, provider, network } = useWeb3();
-
-  useEffect(() => {
-    async function getEthPrice() {
-      const ethPriceApi = await fetchEthUsdPrice();
-      setEthPrice(ethPriceApi);
-    }
-    getEthPrice();
-  }, []);
 
   useEffect(() => {
     if (network && network !== 5) {
@@ -296,7 +286,6 @@ export default function useHome() {
     chains,
     tokens,
     asset,
-    ethPrice,
     amountIn,
     amountOut,
     routeId,
