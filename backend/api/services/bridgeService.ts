@@ -23,12 +23,10 @@ import { calculateTransactionCost, getIsApproved } from "../helpers/web3";
 import { fetchEthUsdPrice } from "./coingeckoService";
 import { getHopAmountOut, getHopChain } from "../helpers/hopHelper";
 import { parseUnits } from "ethers/lib/utils";
-import { HYDRA_BRIDGE_INTERFACE } from "../common/constants";
-import * as dotenv from "dotenv";
-dotenv.config({ path: __dirname + "/.env" });
+import { HYDRA_BRIDGE_INTERFACE, isTestnet } from "../common/constants";
+import "dotenv/config";
 
 const { ETH_CONTRACT, HOP_RELAYER, HOP_RELAYER_FEE, ETH_NETWORK } = process.env;
-const environment = process.env.NODE_ENV || "dev";
 
 export const getQuote = async (
   dto: QuoteRequestDto
@@ -67,6 +65,10 @@ export const getQuote = async (
       return response;
     }
 
+    if (!chainFrom.is_sending_enabled && !chainTo.is_receiving_enabled) {
+      return BadRequest("Transfer between chains not supported");
+    }
+
     if (chainFrom.id === chainTo.id) {
       return BadRequest("Pick different chains");
     }
@@ -75,7 +77,7 @@ export const getQuote = async (
 
     const bridges = await prisma.bridge.findMany({
       where: {
-        is_testnet: environment === "dev" ? true : false,
+        is_testnet: isTestnet ? true : false,
       },
     });
 
@@ -172,7 +174,7 @@ export const getQuote = async (
   } catch (e) {
     consoleLogger.error(e);
     hydraLogger.error(e);
-    return ServerError();
+    return ServerError(e.message);
   }
 };
 
