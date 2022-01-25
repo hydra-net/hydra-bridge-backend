@@ -12,6 +12,10 @@ import * as dotenv from "dotenv";
 
 dotenv.config({ path: __dirname + "/.env" });
 
+const { NODE_ENV } = process.env;
+
+const isTestnet = NODE_ENV === "dev" ? true : false;
+
 export const getTokens = async (
   chainId: string
 ): Promise<ServiceResponseDto<TokenResponseDto[]>> => {
@@ -52,6 +56,9 @@ export const getChains = async (): Promise<
 
   try {
     const chains = await prisma.chain.findMany({
+      where: {
+        is_testnet: isTestnet,
+      },
       include: {
         token: {
           select: {
@@ -72,7 +79,7 @@ export const getChains = async (): Promise<
         const dto: ChainResponseDto = {
           chainId: item.chainId,
           name: item.name,
-          isL1: item.is_l1,
+          isLayer1: item.is_layer1,
           isTestnet: item.is_testnet,
           isReceivingEnabled: item.is_receiving_enabled,
           isSendingEnabled: item.is_sending_enabled,
