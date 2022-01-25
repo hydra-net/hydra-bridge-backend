@@ -25,15 +25,16 @@ export const getWalletBalances = async (address: string, chainId: string) => {
 
   try {
     const parsedChainId = parseInt(chainId);
+
     const tokens = await getTokensByChainId(parsedChainId);
     const provider = getProvider();
     const tokenBalances: TokenBalanceResponseDto[] = [];
     const tokenPrices = await fetchAllTokenPrices();
+
     for (const token of tokens) {
       const tokenPrice = tokenPrices.find(
         (tokenPrice) => tokenPrice.symbol === token.symbol.toLowerCase()
       );
-      2;
 
       if (token.symbol === "ETH") {
         const web3 = new Web3(getProviderUrl());
