@@ -9,7 +9,7 @@
       "url": "https://opensource.org/licenses/MIT"
     }
   },
-  "basePath": "/api",
+  "basePath": "/api/v1",
   "schemes": ["http"],
   "consumes": ["application/json"],
   "produces": ["application/json"],
@@ -213,7 +213,7 @@
           "200": {
             "description": "OK",
             "schema": {
-              "$ref": "#/definitions/BuildTxResponseDto"
+              "$ref": "#/definitions/BuildBridgeTxResponseDto"
             }
           },
           "400": {
@@ -255,6 +255,12 @@
         "summary": "Get quote for bridge routes",
         "parameters": [
           {
+            "name": "recipient",
+            "in": "query",
+            "description": "Recipent of transfer",
+            "required": "true"
+          },
+          {
             "name": "fromAsset",
             "in": "query",
             "description": "Asset from who we bridge",
@@ -291,7 +297,7 @@
             "schema": {
               "type": "array",
               "items": {
-                "$ref": "#/definitions/QuotesDto"
+                "$ref": "#/definitions/QuotesResponseDto"
               }
             }
           },
@@ -423,6 +429,67 @@
           }
         }
       }
+    },
+    "/balances": {
+      "get": {
+        "tags": ["Balances"],
+        "summary": "Get all token balances of wallet",
+        "parameters": [
+          {
+            "name": "address",
+            "in": "query",
+            "description": "Wallet address",
+            "required": "true"
+          },
+          {
+            "name": "chainId",
+            "in": "query",
+            "description": "Official chainId of chain we are transfering from",
+            "required": "true"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/TokenBalancesResponseDto"
+              }
+            }
+          },
+          "400": {
+            "description": "Client Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorDto"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "definitions": {
@@ -478,7 +545,7 @@
         }
       }
     },
-    "BuildTxRequestDto": {
+    "BuildBridgeTxRequestDto": {
       "required": [
         "recipient",
         "fromAsset",
@@ -509,7 +576,7 @@
       }
     },
 
-    "BuildTxResponseDto": {
+    "BuildBridgeTxResponseDto": {
       "properties": {
         "data": {
           "type": "string"
@@ -558,35 +625,93 @@
     "QuoteResponseDto": {
       "properties": {
         "fromAsset": {
-          "type": "string"
+          "$ref": "#/definitions/TokenResponseDto"
         },
         "fromChainId": {
-          "type": "string"
+          "type": "number"
         },
         "toAsset": {
-          "type": "string"
+          "$ref": "#/definitions/TokenResponseDto"
         },
         "toChainId": {
+          "type": "number"
+        },
+        "routes": {
+          "type": "array",
+          "$ref": "#/definitions/RouteResponseDto"
+        },
+        "amount": {
           "type": "string"
+        },
+        "isApproved": {
+          "type": "boolean"
+        }
+      }
+    },
+    "RouteResponseDto": {
+      "properties": {
+        "id": {
+          "type": "number"
+        },
+        "allowanceTarget": {
+          "type": "string"
+        },
+        "bridgeRoute": {
+          "$ref": "#/definitions/BridgeRouteResponseDto"
+        },
+        "buildTx": {
+          "$ref": "#/definitions/BuildBridgeTxResponseDto"
+        },
+        "transactionCoastUsd": {
+          "type": "number"
+        }
+      }
+    },
+    "BridgeRouteResponseDto": {
+      "properties": {
+        "bridgeName": {
+          "type": "string"
+        },
+        "bridgeId": {
+          "type": "number"
+        },
+        "bridgeInfo": {
+          "$ref": "#/definitions/BridgeInfoResponseDto"
+        },
+        "fromAsset": {
+          "$ref": "#/definitions/TokenResponseDto"
+        },
+        "fromChainId": {
+          "type": "number"
+        },
+        "toAsset": {
+          "$ref": "#/definitions/TokenResponseDto"
+        },
+        "toChainId": {
+          "type": "number"
         },
         "amountIn": {
           "type": "string"
         },
         "amountOut": {
           "type": "string"
-        },
-        "allowanceTarget": {
-          "type": "string"
-        },
-        "isApproveRequired": {
-          "type": "boolean"
-        },
-        "routeId": {
-          "type": "string"
         }
       }
     },
-    "QuotesDto": {
+    "BridgeInfoResponseDto": {
+      "properties": {
+        "serviceTime": {
+          "type": "number"
+        },
+        "displayName": {
+          "type": "string"
+        },
+        "isTestnet": {
+          "type": "boolean"
+        }
+      }
+    },
+    "QuotesResponseDto": {
       "type": "array",
       "$ref": "#/definitions/QuoteResponseDto"
     },
@@ -603,6 +728,9 @@
     },
     "TokenResponseDto": {
       "properties": {
+        "id": {
+          "type": "number"
+        },
         "name": {
           "type": "string"
         },
@@ -656,6 +784,48 @@
         },
         "explorers": {
           "type": "array"
+        }
+      }
+    },
+    "TokenBalanceResponseDto": {
+      "properties": {
+        "tokenId": {
+          "type": "number"
+        },
+        "chainId": {
+          "type": "string"
+        },
+        "address": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "symbol": {
+          "type": "string"
+        },
+        "decimals": {
+          "type": "number"
+        },
+        "price": {
+          "type": "number"
+        },
+        "amount": {
+          "type": "string"
+        },
+        "currency": {
+          "type": "string"
+        }
+      }
+    },
+    "TokenBalancesResponseDto": {
+      "properties": {
+        "success": {
+          "type": "boolean"
+        },
+        "results": {
+          "type": "array",
+          "$ref": "#/definitions/TokenBalanceResponseDto"
         }
       }
     }

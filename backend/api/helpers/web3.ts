@@ -1,7 +1,10 @@
 import { ethers } from "ethers";
+import { parseUnits } from "ethers/lib/utils";
 import Web3 from "web3";
-import { BuildTxResponseDto } from "../common/dtos";
-require("dotenv").config();
+import { erc20Abi } from "../common/abis/erc20Abi";
+import { BuildBridgeTxResponseDto, IsApprovedDto } from "../common/dtos";
+import "dotenv/config";
+
 const { ETH_INFURA_ID, ETH_NETWORK, ETH_CHAIN_ID } = process.env;
 
 export const getProviderUrl = () => {
@@ -12,6 +15,8 @@ export const getProviderUrl = () => {
   }
   return provider;
 };
+
+export const web3Initialised = new Web3(getProviderUrl());
 
 export const getProvider = () => {
   return new ethers.providers.JsonRpcProvider(getProviderUrl(), {
@@ -25,28 +30,38 @@ export const getSigner = () => {
 };
 
 export const encodeParameter = (
-  type: string = "uint256",
+  paramType: string = "uint256",
   amount: string | number | undefined
 ) => {
-  const web3 = new Web3(getProviderUrl());
-  return amount ? web3.eth.abi.encodeParameter(type, amount) : undefined;
+  return amount
+    ? web3Initialised.eth.abi.encodeParameter(paramType, amount)
+    : undefined;
 };
 
-
-export const decodeParameter = (
-  type: string = "uint256",
-  data : any
-) => {
-  const web3 = new Web3(getProviderUrl());
-  return data ? web3.eth.abi.decodeParameter(type, data) : undefined;
+export const decodeParameter = (type: string = "uint256", data: string) => {
+  return data ? web3Initialised.eth.abi.decodeParameter(type, data) : undefined;
 };
 
 export const calculateTransactionCost = async (
-  params: BuildTxResponseDto
+  params: BuildBridgeTxResponseDto
 ): Promise<string> => {
-  const web3 = new Web3(getProviderUrl());
-  const gasPrice = await web3.eth.getGasPrice();
-  const gasLimit = await web3.eth.estimateGas(params);
-  var transactionFee = Number.parseInt(gasPrice) * gasLimit;
+  const gasPrice = await web3Initialised.eth.getGasPrice();
+  const gasLimit = await web3Initialised.eth.estimateGas(params);
+  const transactionFee = Number.parseInt(gasPrice) * gasLimit;
   return ethers.utils.formatEther(transactionFee);
+};
+
+export const getIsApproved = async (dto: IsApprovedDto) => {
+  const { tokenAddress, recipient, allowanceContractAddr, amount, decimals } =
+    dto;
+  const rootToken = new ethers.Contract(tokenAddress, erc20Abi, getProvider());
+
+  const res = await rootToken.functions.allowance(
+    recipient,
+    allowanceContractAddr
+  );
+
+  const amountToSpend = parseUnits(amount, decimals);
+  const amountAllowed = ethers.BigNumber.from(res.toString());
+  return amountAllowed.gte(amountToSpend);
 };

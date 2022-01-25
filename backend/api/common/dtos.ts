@@ -1,15 +1,17 @@
-export interface ServiceResponseDto {
+import { Query } from "express-serve-static-core";
+
+export interface ServiceResponseDto<T> {
   status: number;
-  message?: any;
-  data?: any;
+  message?: string;
+  data?: ApiResponseDto<T>;
 }
 
-export interface ApiResponseDto {
+export interface ApiResponseDto<T> {
   success: boolean;
-  result: any;
+  result: T;
 }
 
-export interface AllowanceRequestDto {
+export interface AllowanceRequestDto extends Query {
   chainId: string;
   owner: string;
   spender: string;
@@ -17,18 +19,11 @@ export interface AllowanceRequestDto {
 }
 
 export interface AllowanceResponseDto {
-  value: number;
+  value: string;
   tokenAddress: string;
 }
 
-export interface CheckAllowanceDto {
-  chainId: string;
-  owner: string;
-  spender: string;
-  tokenAddress: string;
-}
-
-export interface BuildAllowanceRequestDto {
+export interface BuildAllowanceRequestDto extends Query {
   chainId: string;
   owner: string;
   spender: string;
@@ -42,7 +37,7 @@ export interface BuildAllowanceResponseDto {
   from: string;
 }
 
-export interface BuildTxRequestDto {
+export interface BuildBridgeTxRequestDto extends Query {
   recipient: string;
   fromAsset: string;
   fromChainId: string;
@@ -52,14 +47,15 @@ export interface BuildTxRequestDto {
   routeId: string;
 }
 
-export interface GetTxRequestDto {
-  recipient: string
-  tokenSymbol: string
-  tokenAddress: string
+export interface GetBridgeTxRequestDto {
+  recipient: string;
+  tokenSymbol: string;
+  tokenAddress: string;
   amount: string;
+  decimals?: number;
 }
 
-export interface QuoteRequestDto {
+export interface QuoteRequestDto extends Query {
   recipient: string;
   fromAsset: string;
   fromChainId: string;
@@ -73,52 +69,9 @@ export interface QuoteResponseDto {
   fromChainId: number;
   toAsset: TokenResponseDto;
   toChainId: number;
-  routes: RouteDto[]
+  routes: RouteResponseDto[];
   amount: string;
-  isApproved: boolean
-}
-
-export interface RouteDto {
-  id: number;
-  allowanceTarget: string;
-  bridgeRoute: BridgeRouteDto
-  buildTx : BuildTxResponseDto
-  fees : RouteFeeDto
-}
-
-export interface BridgeRouteDto {
-  bridgeName: string
-  bridgeId: number
-  bridgeInfo: BridgeInfoDto
-  fromAsset: TokenResponseDto
-  fromChainId: number
-  toAsset: TokenResponseDto
-  toChainId: number
-  amountIn: string;
-  amountOut: string;
-}
-
-export interface BridgeInfoDto {
-  serviceTime: number;
-  displayName: string
-  isTestnet: boolean
-}
-
-export interface RouteFeeDto {
-  transactionCoastUsd: number
-}
-
-export interface GasLimitDto {
- amount: string
- assetAddress: string
- chainId: number
-}
-
-export interface BuildTxResponseDto {
-  data: string;
-  to: string;
-  from: string;
-  value?: any;
+  isApproved: boolean;
 }
 
 export interface TokenResponseDto {
@@ -130,18 +83,56 @@ export interface TokenResponseDto {
   symbol: string;
 }
 
+export interface RouteResponseDto {
+  id: number;
+  allowanceTarget: string;
+  bridgeRoute: BridgeRouteResponseDto;
+  buildTx: BuildBridgeTxResponseDto;
+  transactionCoastUsd: number;
+}
+
+export interface BridgeRouteResponseDto {
+  bridgeName: string;
+  bridgeId: number;
+  bridgeInfo: BridgeInfoResponseDto;
+  fromAsset: TokenResponseDto;
+  fromChainId: number;
+  toAsset: TokenResponseDto;
+  toChainId: number;
+  amountIn: string;
+  amountOut: string;
+}
+
+export interface BridgeInfoResponseDto {
+  serviceTime: number;
+  displayName: string;
+  isTestnet: boolean;
+}
+
+export interface BuildBridgeTxResponseDto {
+  data: string;
+  to: string;
+  from: string;
+  value?: string;
+}
+
 export interface ChainResponseDto {
   chainId: number;
   name: string;
-  isL1: boolean;
+  isLayer1: boolean;
   isTestnet: boolean;
   isSendingEnabled: boolean;
   isReceivingEnabled: boolean;
-  currency : TokenResponseDto
-  explorers: string[]
+  currency: TokenResponseDto;
+  explorers: string[];
 }
 
-export interface TokenBalanceDto {
+export interface TokenBalanceRequest extends Query {
+  address: string;
+  chainId: string;
+}
+
+export interface TokenBalanceResponseDto {
   tokenId: number;
   chainId: number;
   address: string;
@@ -150,10 +141,22 @@ export interface TokenBalanceDto {
   decimals: number;
   price: number;
   amount: string;
-  currency: string
+  currency: string;
 }
 
-export interface TokenPriceDto {
+export interface TokenPriceResponseDto {
   symbol: string;
   price: number;
+}
+
+export interface IsApprovedDto {
+  tokenAddress: string;
+  allowanceContractAddr: string;
+  amount: string;
+  recipient: string;
+  decimals: number;
+}
+
+export interface BridgeTokenRequestDto extends Query {
+  chainId: string;
 }

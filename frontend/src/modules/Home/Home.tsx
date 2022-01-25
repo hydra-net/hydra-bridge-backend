@@ -1,7 +1,6 @@
 import { useWeb3 } from "@chainsafe/web3-context";
 import { useCallback, useEffect, useState } from "react";
 import styled from "styled-components";
-import { ISelectOption } from "../../common/commonTypes";
 import ActionButtons from "../../common/components/ActionButtons/ActionButtons";
 import AppMessage from "../../common/components/AppMessage";
 import AssetSelect from "../../common/components/AssetSelect";
@@ -57,7 +56,11 @@ const ErrorContainer = styled.div`
   margin-bottom: 10px;
 `;
 
-const Home = () => {
+type Props = {
+  chains: ChainResponseDto[];
+};
+
+const Home = ({ chains }: Props) => {
   const {
     onConnectWallet,
     onApproveWallet,
@@ -80,7 +83,6 @@ const Home = () => {
     walletBalances,
     tokens,
     isEth,
-    chains,
     amountIn,
     amountOut,
     routeId,
@@ -102,6 +104,33 @@ const Home = () => {
   const isConnected = !!address;
 
   const [isNotEnoughBalance, setIsNotEnoughBalance] = useState<boolean>(false);
+
+  const chainsFrom = chains
+    .filter((item) => item.isSendingEnabled)
+    .map((chain: ChainResponseDto) => {
+      const name = chain.name.toString().toLowerCase().includes("goerli")
+        ? "ethereum"
+        : (chain.name.toString().toLowerCase() as any);
+      return {
+        label: chain.name,
+        value: chain.chainId,
+        icon: <Icon name={name} size="20px" />,
+      };
+    });
+
+  const chainsTo = chains
+    .filter((item) => item.isReceivingEnabled)
+    .map((chain: ChainResponseDto) => {
+      const name = chain.name.toString().toLowerCase().includes("polygon")
+        ? "polygon"
+        : (chain.name.toString().toLowerCase() as any);
+
+      return {
+        label: chain.name,
+        value: chain.chainId,
+        icon: <Icon name={name} size="20px" />,
+      };
+    });
 
   const handleQuote = async (
     recipient: string,
@@ -129,8 +158,8 @@ const Home = () => {
         amount: amountIn!,
         fromAsset: asset!,
         toAsset: asset!,
-        fromChainId: chainFrom!,
-        toChainId: chainTo!,
+        fromChainId: chainFrom!.chainId!,
+        toChainId: chainTo!.chainId!,
         routeId: routeId!,
         recipient: address!,
       };
@@ -155,7 +184,14 @@ const Home = () => {
       setAmountIn(value);
       setAmountOut(value);
       checkBalance(value, asset);
-      debouncedQuote(address!, asset, asset, chainFrom, chainTo, value);
+      debouncedQuote(
+        address!,
+        asset,
+        asset,
+        chainFrom?.chainId!,
+        chainTo?.chainId!,
+        value
+      );
     } else {
       const parsedValue = value.replace(/\D/, "");
       setAmountIn(parsedValue);
@@ -182,7 +218,11 @@ const Home = () => {
   };
 
   const handleMoveAssets = async () => {
-    if (!isWrongNetwork) {
+    if (
+      !isWrongNetwork &&
+      chainFrom?.isSendingEnabled &&
+      chainTo?.isReceivingEnabled
+    ) {
       try {
         const signer = provider!.getUncheckedSigner();
         const { data, to, from, value } = bridgeTx;
@@ -212,17 +252,41 @@ const Home = () => {
 
   const handleSelectChainFrom = (option: any) => {
     const { value } = option;
-    if (value !== chainTo) {
-      setChainFrom(option ? value : null);
-      debouncedQuote(address!, asset, asset, value, chainTo, amountIn!);
+    if (value !== chainTo?.chainId) {
+      const selectedChain = chains.find((chain) => chain.chainId === value);
+      if (selectedChain) {
+        setChainFrom(selectedChain);
+        debouncedQuote(
+          address!,
+          asset,
+          asset,
+          selectedChain.chainId,
+          chainTo?.chainId!,
+          amountIn!
+        );
+      } else {
+        setChainFrom(undefined);
+      }
     }
   };
 
   const handleSelectChainTo = (option: any) => {
     const { value } = option;
-    if (option.value !== chainFrom) {
-      setChainTo(option ? option.value : null);
-      debouncedQuote(address!, asset, asset, chainFrom, value, amountIn!);
+    if (option && value !== chainTo?.chainId!) {
+      const selectedChain = chains.find((chain) => chain.chainId === value);
+      if (selectedChain) {
+        setChainTo(selectedChain);
+        debouncedQuote(
+          address!,
+          asset,
+          asset,
+          chainFrom?.chainId!,
+          selectedChain.chainId,
+          amountIn!
+        );
+      } else {
+        setChainTo(undefined);
+      }
     }
   };
 
@@ -231,7 +295,14 @@ const Home = () => {
     setAsset(option ? value : null);
     if (amountIn && amountIn > 0) {
       checkBalance(amountIn, value);
-      debouncedQuote(address!, value, value, chainFrom, chainTo, amountIn!);
+      debouncedQuote(
+        address!,
+        value,
+        value,
+        chainFrom?.chainId!,
+        chainTo?.chainId!,
+        amountIn!
+      );
     }
   };
 
@@ -244,30 +315,6 @@ const Home = () => {
   const handleCloseModal = () => {
     setIsModalOpen(false);
   };
-
-  const chainsFrom: ISelectOption[] = chains
-    ? chains
-        .filter((item) => item.chainId === 5)
-        .map((chain: ChainResponseDto) => {
-          return {
-            label: chain.name,
-            value: chain.chainId,
-            icon: <Icon name={"eth"} size="20px" />,
-          };
-        })
-    : [];
-
-  const chainsTo: ISelectOption[] = chains
-    ? chains
-        .filter((item) => item.chainId === 80001)
-        .map((chain: ChainResponseDto) => {
-          return {
-            label: chain.name,
-            value: chain.chainId,
-            icon: <Icon name={"polygon"} size="20px" />,
-          };
-        })
-    : [];
 
   return (
     <>
@@ -296,8 +343,8 @@ const Home = () => {
               <TransferChainSelects
                 chainsFrom={chainsFrom}
                 chainsTo={chainsTo}
-                chainFrom={chainFrom}
-                chainTo={chainTo}
+                chainFrom={chainFrom?.chainId!}
+                chainTo={chainTo?.chainId!}
                 onSelectChainFrom={handleSelectChainFrom}
                 onSelectChainTo={handleSelectChainTo}
                 isDisabled={inProgress || isWrongNetwork}

@@ -9,17 +9,13 @@ import {
   TokenBalanceDto,
   TokenResponseDto,
 } from "../../common/dtos";
-import { getAllChains, getBridgeTokens } from "../../api/commonService";
-import { fetchEthUsdPrice } from "../../api/coingeckoService";
+import { getBridgeTokens } from "../../api/commonService";
 import { useWeb3 } from "@chainsafe/web3-context";
 import { getUserAddressBalances } from "../../api/balancesService";
 import { isEmpty } from "../../helpers/stringHelper";
-require("dotenv").config();
+import "dotenv/config";
 
-const { REACT_APP_HYDRA_BRIDGE_CONTRACT } = process.env;
-
-export const CHAIN_FROM_DEFAULT = 5;
-export const CHAIN_TO_DEFAULT = 80001;
+const { REACT_APP_DEFAULT_NETWORK_ID, REACT_APP_ETH_CONTRACT } = process.env;
 
 export default function useHome() {
   //transaction actions
@@ -38,15 +34,13 @@ export default function useHome() {
 
   //state
   const [tokens, setTokens] = useState<TokenResponseDto[]>([]);
-  const [chains, setChains] = useState<ChainResponseDto[]>([]);
-  const [chainFrom, setChainFrom] = useState<number>(CHAIN_FROM_DEFAULT);
-  const [chainTo, setChainTo] = useState<number>(CHAIN_TO_DEFAULT);
+  const [chainFrom, setChainFrom] = useState<ChainResponseDto>();
+  const [chainTo, setChainTo] = useState<ChainResponseDto>();
   const [walletBalances, setWalletBalances] = useState<TokenBalanceDto[]>();
   const [asset, setAsset] = useState<number>(4);
   const [amountIn, setAmountIn] = useState<number>(0.0);
   const [amountOut, setAmountOut] = useState<number>(0.0);
   const [routeId, setRouteId] = useState<number>(0);
-  const [ethPrice, setEthPrice] = useState<number>(0);
   const [isWrongNetwork, setIsWrongNetwork] = useState<boolean>(false);
 
   //modal
@@ -58,20 +52,10 @@ export default function useHome() {
   const { onboard, address, provider, network } = useWeb3();
 
   useEffect(() => {
-    async function getEthPrice() {
-      const ethPriceApi = await fetchEthUsdPrice();
-      setEthPrice(ethPriceApi);
-    }
-    getEthPrice();
-  }, []);
-
-  useEffect(() => {
-    if (network && network !== 5) {
-      setIsWrongNetwork(true);
-      setError("Wrong network switch to goerli!");
-      setIsErrorOpen(true);
-    } else {
+    if (network && parseInt(REACT_APP_DEFAULT_NETWORK_ID!) === network) {
       setIsWrongNetwork(false);
+    } else {
+      setIsWrongNetwork(true);
     }
   }, [network, setIsWrongNetwork]);
 
@@ -79,7 +63,12 @@ export default function useHome() {
     async function getWalletBalances() {
       try {
         if (address) {
-          const res = await getUserAddressBalances(address, chainFrom);
+          const res = await getUserAddressBalances(
+            address,
+            chainFrom
+              ? chainFrom?.chainId!
+              : parseInt(REACT_APP_DEFAULT_NETWORK_ID!)
+          );
           if (res && res.success) {
             setWalletBalances(res.result);
           }
@@ -95,23 +84,19 @@ export default function useHome() {
 
   useEffect(() => {
     async function getTokens() {
-      const res = await getBridgeTokens(chainFrom);
+      const res = await getBridgeTokens(
+        chainFrom
+          ? chainFrom?.chainId!
+          : parseInt(REACT_APP_DEFAULT_NETWORK_ID!)
+      );
       if (res && res.success) {
         setTokens(res.result);
       }
     }
-    getTokens();
-  }, [chainFrom]);
-
-  useEffect(() => {
-    async function getChains() {
-      const res = await getAllChains();
-      if (res && res.success) {
-        setChains(res.result);
-      }
+    if (network) {
+      getTokens();
     }
-    getChains();
-  }, []);
+  }, [network, chainFrom]);
 
   const onConnectWallet = async () => {
     // Prompt user to select a wallet
@@ -197,7 +182,7 @@ export default function useHome() {
         const res = await buildApprovalTx(
           chainId,
           walletAddress,
-          REACT_APP_HYDRA_BRIDGE_CONTRACT!,
+          REACT_APP_ETH_CONTRACT!,
           tokenAddress,
           amount
         );
@@ -215,7 +200,12 @@ export default function useHome() {
 
   const onApproveWallet = async () => {
     try {
-      if (buildApproveTx && !isWrongNetwork) {
+      if (
+        buildApproveTx &&
+        !isWrongNetwork &&
+        chainFrom?.isSendingEnabled &&
+        chainTo?.isReceivingEnabled
+      ) {
         const signer = provider!.getUncheckedSigner();
         const tx = await signer.sendTransaction(buildApproveTx);
         if (tx) {
@@ -230,9 +220,9 @@ export default function useHome() {
             await onGetQuote({
               recipient: address!,
               fromAsset: asset,
-              fromChainId: chainFrom,
+              fromChainId: chainFrom?.chainId!,
               toAsset: asset,
-              toChainId: chainTo,
+              toChainId: chainTo?.chainId!,
               amount: amountIn,
             });
           }
@@ -292,11 +282,10 @@ export default function useHome() {
     setIsApproved,
     walletBalances,
     isWrongNetwork,
+    network,
     token,
-    chains,
     tokens,
     asset,
-    ethPrice,
     amountIn,
     amountOut,
     routeId,

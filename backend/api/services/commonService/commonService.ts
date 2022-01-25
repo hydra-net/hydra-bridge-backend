@@ -1,3 +1,4 @@
+import { isTestnet } from "../../common/constants";
 import {
   ApiResponseDto,
   ChainResponseDto,
@@ -6,30 +7,25 @@ import {
 } from "../../common/dtos";
 import prisma from "../../helpers/db";
 import { consoleLogger, hydraLogger } from "../../helpers/hydraLogger";
-import { BadRequest, ServerError } from "../../helpers/serviceErrorHelper";
-import { isEmpty } from "../../helpers/stringHelper";
+import { ServerError } from "../../helpers/serviceErrorHelper";
 import { getTokensByChainId } from "./commonServiceHelper";
-require("dotenv").config();
 
 export const getTokens = async (
   chainId: string
-): Promise<ServiceResponseDto> => {
-  let response: ServiceResponseDto = {
-    status: 200,
-    data: null,
-  };
-
-  let apiResponse: ApiResponseDto = {
+): Promise<ServiceResponseDto<TokenResponseDto[]>> => {
+  const apiResponse: ApiResponseDto<TokenResponseDto[]> = {
     success: true,
     result: [],
   };
 
-  if (isEmpty(chainId)) {
-    return BadRequest();
-  }
+  const response: ServiceResponseDto<TokenResponseDto[]> = {
+    status: 200,
+    data: apiResponse,
+  };
 
   try {
-    apiResponse.result = await getTokensByChainId(chainId);
+    const parsedChainId = parseInt(chainId);
+    apiResponse.result = await getTokensByChainId(parsedChainId);
     response.data = apiResponse;
     return response;
   } catch (e) {
@@ -39,19 +35,24 @@ export const getTokens = async (
   }
 };
 
-export const getChains = async (): Promise<ServiceResponseDto> => {
-  let response: ServiceResponseDto = {
-    status: 200,
-    data: null,
-  };
-
-  let apiResponse: ApiResponseDto = {
+export const getChains = async (): Promise<
+  ServiceResponseDto<ChainResponseDto[]>
+> => {
+  const apiResponse: ApiResponseDto<ChainResponseDto[]> = {
     success: true,
     result: [],
   };
 
+  const response: ServiceResponseDto<ChainResponseDto[]> = {
+    status: 200,
+    data: apiResponse,
+  };
+
   try {
     const chains = await prisma.chain.findMany({
+      where: {
+        is_testnet: isTestnet,
+      },
       include: {
         token: {
           select: {
@@ -72,7 +73,7 @@ export const getChains = async (): Promise<ServiceResponseDto> => {
         const dto: ChainResponseDto = {
           chainId: item.chainId,
           name: item.name,
-          isL1: item.is_l1,
+          isLayer1: item.is_layer1,
           isTestnet: item.is_testnet,
           isReceivingEnabled: item.is_receiving_enabled,
           isSendingEnabled: item.is_sending_enabled,

@@ -4,8 +4,8 @@ import {
   QuoteRequestDto,
 } from "../common/dtos";
 import { fetchWrapper } from "../helpers/fetchWrapper";
+import "dotenv/config";
 
-require("dotenv").config();
 const { REACT_APP_API_URL } = process.env;
 
 export const buildBridgeTx = async (
@@ -16,7 +16,7 @@ export const buildBridgeTx = async (
       `${REACT_APP_API_URL}/bridge/build-tx?recipient=${dto.recipient}&fromAsset=${dto.fromAsset}&fromChainId=${dto.fromChainId}&toAsset=${dto.toAsset}&toChainId=${dto.toChainId}&amount=${dto.amount}&routeId=${dto.routeId}`
     );
 
-    return response.result.data;
+    return response.result;
   } catch (e) {
     console.log(e);
     return {
@@ -33,7 +33,7 @@ export const getQuote = async (
     const response: any = await fetchWrapper.get(
       `${REACT_APP_API_URL}/bridge/quote?recipient=${dto.recipient}&fromAsset=${dto.fromAsset}&fromChainId=${dto.fromChainId}&toAsset=${dto.toAsset}&toChainId=${dto.toChainId}&amount=${dto.amount}`
     );
-    return response.result.data;
+    return response.result;
   } catch (e) {
     console.log(e);
     return {

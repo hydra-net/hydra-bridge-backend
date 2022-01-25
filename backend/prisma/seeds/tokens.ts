@@ -2,7 +2,7 @@ export const tokens = [
   {
     // id: 1,
     name: "Ether",
-    address: "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", // Mainnet, Goerli
+    address: "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", // Mainnet, Goerli, Arbitrum, Optimism
     decimals: 18,
     symbol: "ETH",
   },
@@ -38,6 +38,20 @@ export const tokens = [
     // id: 6,
     name: "USD COIN",
     address: "0x6d4dd09982853f08d9966ac3ca4eb5885f16f2b2", // Polygon mumbai
+    decimals: 18,
+    symbol: "USDC",
+  },
+  {
+    // id: 7,
+    name: "USD COIN",
+    address: "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8", // Arbitrum
+    decimals: 18,
+    symbol: "USDC",
+  },
+  {
+    //id: 8
+    name: "USD COIN",
+    address: "0x7F5c764cBc14f9669B88837ca1490cCa17c31607", // Optimism
     decimals: 18,
     symbol: "USDC",
   },

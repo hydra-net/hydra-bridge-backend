@@ -1,9 +1,14 @@
-import { Request, Response } from "express";
+import { Response } from "express";
+import { AllowanceRequestDto, BuildAllowanceRequestDto } from "../common/dtos";
+import { ReqQuery } from "../common/interfaces";
 import { handleResponse } from "../helpers/controllerHandler";
 import { buildTx, getAllowance } from "../services/allowanceService";
 
-export const checkAllowance = async (req: Request, res: Response) => {
-  const { chainId, owner, spender, tokenAddress }: any = req.query;
+export const checkAllowance = async (
+  req: ReqQuery<AllowanceRequestDto>,
+  res: Response
+) => {
+  const { chainId, owner, spender, tokenAddress } = req.query;
   handleResponse(
     res,
     await getAllowance({
@@ -15,8 +20,11 @@ export const checkAllowance = async (req: Request, res: Response) => {
   );
 };
 
-export const buildAllowanceTx = async (req: Request, res: Response) => {
-  const { chainId, owner, spender, amount, tokenAddress }: any = req.query;
+export const buildAllowanceTx = async (
+  req: ReqQuery<BuildAllowanceRequestDto>,
+  res: Response
+) => {
+  const { chainId, owner, spender, amount, tokenAddress } = req.query;
   handleResponse(
     res,
     await buildTx({

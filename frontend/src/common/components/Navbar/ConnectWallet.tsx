@@ -5,6 +5,8 @@ import Button from "../Buttons/Button";
 import Copy from "../Copy";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import "dotenv/config";
+const { REACT_APP_DEFAULT_NETWORK_ID } = process.env;
 
 const Root = styled.div`
   max-width: 160px;
@@ -14,10 +16,11 @@ const Container = styled.div`
   width: 100%;
 `;
 
-const Wrapper = styled.div`
+const Wrapper = styled.div<{ $isRightNetwork: boolean }>`
   padding: 10px 20px;
   border-radius: ${(props) => props.theme.borderRadius.lg};
-  background: rgb(226, 226, 229);
+  background: ${(props) =>
+    props.$isRightNetwork ? "rgb(226, 226, 229)" : "rgb(218, 45, 43)"};
   font-weight: 700;
   cursor: pointer;
   ${getFlexCenter};
@@ -29,7 +32,12 @@ const AddressContainer = styled.div``;
 
 const ConnectWallet = () => {
   const theme = useTheme();
-  const { onboard, wallet, address } = useWeb3();
+  const { onboard, wallet, address, network } = useWeb3();
+
+  const isRightNetwork =
+    network && parseInt(REACT_APP_DEFAULT_NETWORK_ID!) === network
+      ? true
+      : false;
 
   const handleConnectWallet = async () => {
     if (!wallet) {
@@ -58,11 +66,13 @@ const ConnectWallet = () => {
   return (
     <Root>
       <Container>
-        <Wrapper>
+        <Wrapper $isRightNetwork={isRightNetwork}>
           <AddressContainer>
-            {address.substring(0, 6) + "..." + address.substring(38, 42)}
+            {isRightNetwork
+              ? address.substring(0, 6) + "..." + address.substring(38, 42)
+              : "Wrong network"}
           </AddressContainer>
-          <Copy payload={address || ""} onCopy={notify} />
+          {isRightNetwork && <Copy payload={address || ""} onCopy={notify} />}
         </Wrapper>
       </Container>
       <ToastContainer />

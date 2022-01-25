@@ -106,7 +106,7 @@ const isDisabled = inProgress || isWrongNetwork
           fontWeight={"700"}
           onClick={onMoveAssets}
           width={"100%"}
-          text={"Move"}
+          text={"Bridge"}
           isLoading={inProgress}
           disabled={isDisabled}
         />

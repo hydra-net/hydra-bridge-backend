@@ -1,6 +1,6 @@
 import { ServiceResponseDto } from "../common/dtos";
 
-export const NotFound = (): ServiceResponseDto => {
+export const NotFound = <T>(): ServiceResponseDto<T> => {
   return {
     status: 404,
     message: "Not found",

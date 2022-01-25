@@ -3,7 +3,7 @@
 
 pragma solidity ^0.8.4;
 
-import "./IERC20.sol";
+import "../erc20/IERC20.sol";
 import "./Address.sol";
 
 /**

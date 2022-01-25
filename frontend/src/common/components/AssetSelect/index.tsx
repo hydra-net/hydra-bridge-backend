@@ -53,11 +53,17 @@ const AssetSelect = ({
   };
 
   const options = tokens.map((token: TokenResponseDto, index: number) => {
+    const isEth = token.symbol.toLocaleLowerCase() === "eth";
     return {
       label: token.symbol,
       value: token.id,
       icon: (
-        <Icon name={token.symbol.toLocaleLowerCase() as IconKeys} size="20px" />
+        <Icon
+          name={
+            isEth ? "ethereum" : (token.symbol.toLocaleLowerCase() as IconKeys)
+          }
+          size="20px"
+        />
       ),
     };
   });

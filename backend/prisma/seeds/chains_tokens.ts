@@ -31,4 +31,20 @@ export const chains_tokens = [
     chain_id: 4, // Goerli
     token_id: 1, // ETH
   },
+  {
+    chain_id: 5, // Arbitrum
+    token_id: 1, // ETH
+  },
+  {
+    chain_id: 5, // Arbitrum
+    token_id: 7, // USDC
+  },
+  {
+    chain_id: 6, // Optimism
+    token_id: 1, // ETH
+  },
+  {
+    chain_id: 6, // Optimism
+    token_id: 8, // USDC
+  },
 ];

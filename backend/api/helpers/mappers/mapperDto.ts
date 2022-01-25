@@ -1,13 +1,13 @@
 import {
-  BuildTxResponseDto,
-  RouteDto,
-  TokenBalanceDto,
+  BuildBridgeTxResponseDto,
+  RouteResponseDto,
+  TokenBalanceResponseDto,
   TokenResponseDto,
 } from "../../common/dtos";
-import { Asset } from "../../common/enums";
+import { Token, Bridge, Route } from "@prisma/client";
 
 export const mapTokenToDto = (
-  token: any,
+  token: Token,
   chainId: number
 ): TokenResponseDto => {
   return {
@@ -21,17 +21,17 @@ export const mapTokenToDto = (
 };
 
 export const mapRouteToDto = (
-  route: any,
+  route: Route,
   allowanceTarget: string,
-  bridge: any,
+  bridge: Bridge,
   token: TokenResponseDto,
   chainFromId: number,
   chainToId: number,
   amountIn: string,
   amountOut: string,
-  buildTx: BuildTxResponseDto,
+  buildTx: BuildBridgeTxResponseDto,
   transactionCoastUsd: number
-): RouteDto => {
+): RouteResponseDto => {
   return {
     id: route.id,
     allowanceTarget: allowanceTarget,
@@ -49,12 +49,9 @@ export const mapRouteToDto = (
       toChainId: chainToId,
       amountIn: amountIn,
       amountOut: amountOut, //TODO: add function to calculate amountOut
-    
     },
     buildTx: buildTx,
-    fees: {
-      transactionCoastUsd: transactionCoastUsd
-    }
+    transactionCoastUsd: transactionCoastUsd,
   };
 };
 
@@ -62,7 +59,7 @@ export const mapTokenBalanceToDto = (
   token: TokenResponseDto,
   price: number,
   amount: string
-): TokenBalanceDto => {
+): TokenBalanceResponseDto => {
   return {
     tokenId: token.id,
     chainId: token.chainId,

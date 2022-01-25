@@ -1,20 +1,16 @@
 import {
   ApiResponseDto,
-  BuildTxRequestDto,
-  BuildTxResponseDto,
-  GetTxRequestDto,
+  BuildBridgeTxRequestDto,
+  BuildBridgeTxResponseDto,
+  GetBridgeTxRequestDto,
   QuoteRequestDto,
   QuoteResponseDto,
-  RouteDto,
+  RouteResponseDto,
   ServiceResponseDto,
 } from "../common/dtos";
 import { Asset } from "../common/enums";
-import { Interface } from "@ethersproject/abi";
-import { BigNumber, ethers } from "ethers";
-import { hydraBridge } from "./contractInterfaces/contractInterfaces";
+import { ethers } from "ethers";
 import { getTimestamp } from "../helpers/time";
-import { parseUnits } from "ethers/lib/utils";
-import { isEmpty } from "../helpers/stringHelper";
 import { consoleLogger, hydraLogger } from "../helpers/hydraLogger";
 import {
   BadRequest,
@@ -23,40 +19,28 @@ import {
 } from "../helpers/serviceErrorHelper";
 import prisma from "../helpers/db";
 import { mapRouteToDto, mapTokenToDto } from "../helpers/mappers/mapperDto";
-import { erc20Abi } from "../common/abis/erc20Abi";
-import { calculateTransactionCost, getProvider } from "../helpers/web3";
+import { calculateTransactionCost, getIsApproved } from "../helpers/web3";
 import { fetchEthUsdPrice } from "./coingeckoService";
+import { getHopAmountOut, getHopChain } from "../helpers/hopHelper";
+import { parseUnits } from "ethers/lib/utils";
+import { HYDRA_BRIDGE_INTERFACE, isTestnet } from "../common/constants";
+import "dotenv/config";
 
-require("dotenv").config();
-const { ETH_CONTRACT, HOP_RELAYER, HOP_RELAYER_FEE } = process.env;
-var environment = process.env.NODE_ENV || "dev";
-
-const HYDRA_BRIDGE_INTERFACE = new Interface(hydraBridge);
+const { ETH_CONTRACT, HOP_RELAYER, HOP_RELAYER_FEE, ETH_NETWORK } = process.env;
 
 export const getQuote = async (
   dto: QuoteRequestDto
-): Promise<ServiceResponseDto> => {
-  let quoteResp: ApiResponseDto = {
+): Promise<ServiceResponseDto<QuoteResponseDto>> => {
+  const quoteResp: ApiResponseDto<QuoteResponseDto> = {
     success: true,
     result: null,
   };
 
-  let response: ServiceResponseDto = {
+  const response: ServiceResponseDto<QuoteResponseDto> = {
     status: 200,
-    data: null,
+    data: quoteResp,
   };
 
-  if (
-    isEmpty(dto.recipient) ||
-    isEmpty(dto.fromAsset) ||
-    isEmpty(dto.fromChainId) ||
-    isEmpty(dto.toAsset) ||
-    isEmpty(dto.toChainId) ||
-    (isEmpty(dto.amount) && dto.amount !== "0")
-  ) {
-    return BadRequest();
-  }
-  
   try {
     const token = await prisma.token.findFirst({
       where: {
@@ -81,15 +65,19 @@ export const getQuote = async (
       return response;
     }
 
+    if (!chainFrom.is_sending_enabled && !chainTo.is_receiving_enabled) {
+      return BadRequest("Transfer between chains not supported");
+    }
+
     if (chainFrom.id === chainTo.id) {
       return BadRequest("Pick different chains");
     }
 
-    const ethPrice = await fetchEthUsdPrice()
+    const ethPrice = await fetchEthUsdPrice();
 
     const bridges = await prisma.bridge.findMany({
       where: {
-        is_testnet: environment === "dev" ? true : false,
+        is_testnet: isTestnet,
       },
     });
 
@@ -102,62 +90,58 @@ export const getQuote = async (
       },
     });
 
-    const routes: RouteDto[] = [];
+    const routes: RouteResponseDto[] = [];
     let isApproved = false;
+    let amountOut: string = dto.amount;
     for (const route of dbRoutes) {
       const bridge = bridges.find((br) => br.id === route.bridge_id);
-      let txDto: BuildTxResponseDto = {
+      let txDto: BuildBridgeTxResponseDto = {
         data: "",
         to: "",
         from: "",
+      };
+      const txRouteDto: GetBridgeTxRequestDto = {
+        recipient: dto.recipient,
+        amount: dto.amount,
+        tokenAddress: token.address,
+        tokenSymbol: token.symbol,
+        decimals: token.decimals,
       };
       if (
         bridge.name === "polygon-bridge" ||
         bridge.name === "polygon-bridge-goerli"
       ) {
-        txDto = await getPolygonRoute({
-          recipient: dto.recipient,
-          tokenSymbol: token.symbol,
-          tokenAddress: token.address,
-          amount: dto.amount,
-        });
-        console.log(txDto)
+        txDto = await getPolygonRoute(txRouteDto);
       }
 
       if (bridge.name === "hop-bridge" || bridge.name === "hop-bridge-goerli") {
-        txDto = await getHopRoute(
-          {
-            recipient: dto.recipient,
-            tokenSymbol: token.symbol,
-            tokenAddress: token.address,
-            amount: dto.amount,
-          },
-          chainTo.chainId
-        );
+        txDto = await getHopRoute(txRouteDto, chainTo.chainId);
       }
       const isEth = token.symbol === "ETH";
-  
+
       if (!isEth) {
-        const rootToken = new ethers.Contract(
-          token.address,
-          erc20Abi,
-          getProvider()
-        );
+        isApproved = await getIsApproved({
+          allowanceContractAddr: ETH_CONTRACT,
+          amount: dto.amount,
+          decimals: token.decimals,
+          recipient: dto.recipient,
+          tokenAddress: token.address,
+        });
 
-        const res = await rootToken.functions.allowance(
-          dto.recipient,
-          ETH_CONTRACT
+        amountOut = await getHopAmountOut(
+          ETH_NETWORK,
+          token.symbol,
+          getHopChain(chainFrom.name),
+          getHopChain(chainTo.name),
+          parseUnits(dto.amount, token.decimals)
         );
-
-        const units = 6;
-        const parsedAmountToSpend = parseUnits(dto.amount, units);
-        const amountToSpend = ethers.BigNumber.from(parsedAmountToSpend);
-        const amountAllowed = ethers.BigNumber.from(res.toString());
-        isApproved = amountAllowed.gte(amountToSpend);
       }
 
-      const txCoast = isApproved || (isEth && txDto.data !== "" ) ? await calculateTransactionCost(txDto) : "0.0";
-  
+      const txCoast =
+        isApproved || (isEth && txDto.data !== "")
+          ? await calculateTransactionCost(txDto)
+          : "0.0";
+
       const routeDto = mapRouteToDto(
         route,
         ETH_CONTRACT,
@@ -166,15 +150,13 @@ export const getQuote = async (
         chainFrom.id,
         chainTo.id,
         dto.amount,
-        dto.amount,
+        amountOut,
         txDto,
         parseFloat(txCoast) * ethPrice
       );
 
       routes.push(routeDto);
-      routes.sort(
-        (a, b) => a.fees.transactionCoastUsd - b.fees.transactionCoastUsd
-      );
+      routes.sort((a, b) => a.transactionCoastUsd - b.transactionCoastUsd);
     }
     const quoteResponse: QuoteResponseDto = {
       fromAsset: mapTokenToDto(token, chainFrom.id),
@@ -192,34 +174,24 @@ export const getQuote = async (
   } catch (e) {
     consoleLogger.error(e);
     hydraLogger.error(e);
-    return ServerError();
+    return ServerError(e.message);
   }
 };
 
 export const buildTx = async (
-  dto: BuildTxRequestDto
-): Promise<ServiceResponseDto> => {
-  let buildResp: ApiResponseDto = {
+  dto: BuildBridgeTxRequestDto
+): Promise<ServiceResponseDto<BuildBridgeTxResponseDto>> => {
+  const buildResp: ApiResponseDto<BuildBridgeTxResponseDto> = {
     success: true,
     result: { data: "", to: "", from: "" },
   };
 
-  let response: ServiceResponseDto = {
+  const response: ServiceResponseDto<BuildBridgeTxResponseDto> = {
     status: 200,
     data: buildResp,
   };
 
   try {
-    if (
-      isEmpty(dto.fromAsset) ||
-      isEmpty(dto.fromChainId) ||
-      isEmpty(dto.toAsset) ||
-      isEmpty(dto.toChainId) ||
-      isEmpty(dto.amount) ||
-      isEmpty(dto.recipient)
-    ) {
-      return BadRequest();
-    }
     if (dto.fromAsset !== dto.toAsset && dto.fromChainId === dto.toChainId) {
       return BadRequest();
     }
@@ -264,16 +236,18 @@ export const buildTx = async (
       return response;
     }
 
+    const txRouteDto: GetBridgeTxRequestDto = {
+      recipient: dto.recipient,
+      amount: dto.amount,
+      tokenAddress: token.address,
+      tokenSymbol: token.symbol,
+      decimals: token.decimals,
+    };
     if (
       route.bridge.name === "polygon-bridge" ||
       route.bridge.name === "polygon-bridge-goerli"
     ) {
-      buildResp.result = await getPolygonRoute({
-        recipient: dto.recipient,
-        amount: dto.amount,
-        tokenAddress: token.address,
-        tokenSymbol: token.symbol,
-      });
+      buildResp.result = await getPolygonRoute(txRouteDto);
       response.data = buildResp;
       return response;
     }
@@ -282,15 +256,7 @@ export const buildTx = async (
       route.bridge.name === "hop-bridge" ||
       route.bridge.name === "hop-bridge-goerli"
     ) {
-      buildResp.result = await getHopRoute(
-        {
-          recipient: dto.recipient,
-          amount: dto.amount,
-          tokenAddress: token.address,
-          tokenSymbol: token.symbol,
-        },
-        chainTo.chainId
-      );
+      buildResp.result = await getHopRoute(txRouteDto, chainTo.chainId);
       response.data = buildResp;
       return response;
     }
@@ -302,61 +268,49 @@ export const buildTx = async (
 };
 
 const getPolygonRoute = async (
-  dto: GetTxRequestDto
-): Promise<BuildTxResponseDto> => {
-  if (dto.tokenSymbol.toLowerCase() === Asset[Asset.usdc]) {
-    const units = dto.tokenSymbol.toLowerCase() === Asset[Asset.usdc] ? 6 : 18;
-    const parsedAmount = parseUnits(dto.amount, units);
-    const bigAmountIn = BigNumber.from(parsedAmount).toString();
+  dto: GetBridgeTxRequestDto
+): Promise<BuildBridgeTxResponseDto> => {
+  if (dto.tokenSymbol.toLowerCase() !== Asset[Asset.eth]) {
     const sendToPolygonData = HYDRA_BRIDGE_INTERFACE.encodeFunctionData(
       "sendToPolygon",
-      [dto.recipient, dto.tokenAddress, bigAmountIn]
+      [
+        dto.recipient,
+        dto.tokenAddress,
+        parseUnits(dto.amount, dto.decimals).toString(),
+      ]
     );
-    const resp = {
+    return {
       data: sendToPolygonData,
       to: ETH_CONTRACT,
       from: dto.recipient,
     };
-
-    return resp;
   }
 
-  if (dto.tokenSymbol.toLowerCase() === Asset[Asset.eth]) {
-    const sendEthToPolygonData = HYDRA_BRIDGE_INTERFACE.encodeFunctionData(
-      "sendEthToPolygon",
-      [dto.recipient]
-    );
-  
-    return {
-      data: sendEthToPolygonData,
-      to: ETH_CONTRACT,
-      from: dto.recipient,
-      value: ethers.utils.parseEther(dto.amount).toHexString(),
-    };
-  }
+  const sendEthToPolygonData = HYDRA_BRIDGE_INTERFACE.encodeFunctionData(
+    "sendEthToPolygon",
+    [dto.recipient]
+  );
 
   return {
-    data: "",
-    to: "",
-    from: "",
+    data: sendEthToPolygonData,
+    to: ETH_CONTRACT,
+    from: dto.recipient,
+    value: ethers.utils.parseEther(dto.amount).toHexString(),
   };
 };
 
 const getHopRoute = async (
-  dto: GetTxRequestDto,
-  chainToId
-): Promise<BuildTxResponseDto> => {
-  if (dto.tokenSymbol.toLowerCase() === Asset[Asset.usdc]) {
-    const units = dto.tokenSymbol.toLowerCase() === Asset[Asset.usdc] ? 6 : 18;
-    const parsedAmount = parseUnits(dto.amount, units);
-    const bigAmountIn = BigNumber.from(parsedAmount).toString();
+  dto: GetBridgeTxRequestDto,
+  chainToId: number
+): Promise<BuildBridgeTxResponseDto> => {
+  if (dto.tokenSymbol.toLowerCase() !== Asset[Asset.eth]) {
     const sendToL2HopData = HYDRA_BRIDGE_INTERFACE.encodeFunctionData(
       "sendToL2Hop",
       [
         dto.tokenAddress,
         dto.recipient,
         chainToId,
-        bigAmountIn,
+        parseUnits(dto.amount, dto.decimals).toString(),
         0,
         getTimestamp(30),
         HOP_RELAYER,
