@@ -14,11 +14,6 @@ import { parseUnits } from "ethers/lib/utils";
 import { consoleLogger, hydraLogger } from "../helpers/hydraLogger";
 import prisma from "../helpers/db";
 import { NotFound, ServerError } from "../helpers/serviceErrorHelper";
-import * as dotenv from "dotenv";
-
-dotenv.config({ path: __dirname + "/.env" });
-
-const { USDC_GOERLI } = process.env;
 
 const ERC20_INTERFACE = new Interface(erc20Abi);
 
@@ -109,8 +104,7 @@ export const buildTx = async (
       dto.spender
     );
 
-    const units = dto.tokenAddress === USDC_GOERLI ? 6 : 18;
-    const parsedAmount = parseUnits(dto.amount, units);
+    const parsedAmount = parseUnits(dto.amount, token.decimals);
     const amountToSpend = ethers.BigNumber.from(parsedAmount.toString());
     const amountAllowed = ethers.BigNumber.from(allwanceRes.toString());
     if (amountToSpend.gt(amountAllowed)) {
