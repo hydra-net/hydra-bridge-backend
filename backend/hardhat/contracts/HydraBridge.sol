@@ -14,7 +14,7 @@ import "./helpers/errors.sol";
 /// @title HydraBridge middleware
 contract HydraBridge is Ownable, Pausable {
   using SafeERC20 for IERC20;
-    
+
     /// Address of polygon bridge root chain manager contract
     address public _polygonRootChainManager;
 
@@ -22,7 +22,7 @@ contract HydraBridge is Ownable, Pausable {
     /// Address of polygon bridge erc20Predicate contract
     address public _erc20Predicate;
 
-     
+
     /// Address of hop bridge contract
     address public _hopBridge;
 
@@ -90,7 +90,7 @@ contract HydraBridge is Ownable, Pausable {
     /// @param amount to transfer
     /// @param to address to transfer
     function _checkBeforeTransfer(uint256 amount, address to) internal pure {
-        require(amount != 0, HydraBridgeErrors.INVALID_AMT);
+        require(amount > 0, HydraBridgeErrors.INVALID_AMT);
         require(to != address(0), HydraBridgeErrors.ADDRESS_0_PROVIDED);
     }
 
@@ -106,19 +106,19 @@ contract HydraBridge is Ownable, Pausable {
 
     /// Set polygon root chain manager
     /// @param polygonRootChainManager address of root chain manager
-    function setRootManager(address polygonRootChainManager) external onlyOwner{ 
+    function setRootManager(address polygonRootChainManager) external onlyOwner{
         _polygonRootChainManager = polygonRootChainManager;
     }
 
     /// Set hop bridge address
     /// @param hopBridge address
-    function setHopBridge(address hopBridge) external onlyOwner{ 
+    function setHopBridge(address hopBridge) external onlyOwner{
         _hopBridge = hopBridge;
     }
 
     /// Set erc20 predicate
     /// @param erc20Predicate address
-    function setErc20Predicate(address erc20Predicate) external onlyOwner{ 
+    function setErc20Predicate(address erc20Predicate) external onlyOwner{
         _erc20Predicate = erc20Predicate;
     }
 
