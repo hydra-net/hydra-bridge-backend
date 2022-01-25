@@ -5,7 +5,8 @@ import Button from "../Buttons/Button";
 import Copy from "../Copy";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { SUPPORTED_NETWORKS } from "../../constants";
+import "dotenv/config";
+const { REACT_APP_DEFAULT_NETWORK_ID } = process.env;
 
 const Root = styled.div`
   max-width: 160px;
@@ -34,7 +35,9 @@ const ConnectWallet = () => {
   const { onboard, wallet, address, network } = useWeb3();
 
   const isRightNetwork =
-    network && SUPPORTED_NETWORKS.includes(network) ? true : false;
+    network && parseInt(REACT_APP_DEFAULT_NETWORK_ID!) === network
+      ? true
+      : false;
 
   const handleConnectWallet = async () => {
     if (!wallet) {
