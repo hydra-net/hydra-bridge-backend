@@ -4,8 +4,8 @@ import {
   TokenResponseDto,
 } from "../common/dtos";
 import { fetchWrapper } from "../helpers/fetchWrapper";
+import "dotenv/config";
 
-require("dotenv").config();
 const { REACT_APP_API_URL } = process.env;
 
 export const getBridgeTokens = async (

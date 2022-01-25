@@ -1,7 +1,6 @@
 import { BaseResponseDto } from "../common/dtos";
 import { fetchWrapper } from "../helpers/fetchWrapper";
-
-require("dotenv").config();
+import "dotenv/config";
 const { REACT_APP_API_URL } = process.env;
 
 export const checkAllowance = async (
