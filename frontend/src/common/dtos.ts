@@ -117,7 +117,7 @@ export interface TokenResponseDto {
 export interface ChainResponseDto {
   chainId: number;
   name: string;
-  isL1: boolean;
+  isLayer1: boolean;
   isTestnet: boolean;
   isSendingEnabled: boolean;
   isReceivingEnabled: boolean;
