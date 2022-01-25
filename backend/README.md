@@ -78,7 +78,7 @@ Commands:
 $ yarn prisma db seed
 ```
 
-- Add migration:
+- Add migration and update db:
 
 ```bash
 $ npx prisma migrate dev --name add_new_field
