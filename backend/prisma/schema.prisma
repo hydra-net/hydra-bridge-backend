@@ -16,7 +16,7 @@ model Chain {
   created_at           DateTime         @default(now())
   updated_at           DateTime         @updatedAt
   name                 String           @db.VarChar(255)
-  is_l1                Boolean          @default(false)
+  is_layer1            Boolean          @default(false)
   is_testnet           Boolean          @default(false)
   is_sending_enabled   Boolean          @default(false)
   is_receiving_enabled Boolean          @default(false)
