@@ -1,8 +1,6 @@
 import { task } from "hardhat/config";
 import "@nomiclabs/hardhat-waffle";
-import * as dotenv from "dotenv";
-
-dotenv.config({ path: __dirname + "/.env" });
+import "dotenv/config";
 
 const { ETH_NETWORK, ETH_INFURA_ID, ETH_MNEMONIC } = process.env;
 

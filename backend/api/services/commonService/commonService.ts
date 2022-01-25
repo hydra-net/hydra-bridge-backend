@@ -1,3 +1,4 @@
+import { isTestnet } from "../../common/constants";
 import {
   ApiResponseDto,
   ChainResponseDto,
@@ -8,13 +9,6 @@ import prisma from "../../helpers/db";
 import { consoleLogger, hydraLogger } from "../../helpers/hydraLogger";
 import { ServerError } from "../../helpers/serviceErrorHelper";
 import { getTokensByChainId } from "./commonServiceHelper";
-import * as dotenv from "dotenv";
-
-dotenv.config({ path: __dirname + "/.env" });
-
-const { NODE_ENV } = process.env;
-
-const isTestnet = NODE_ENV === "dev" ? true : false;
 
 export const getTokens = async (
   chainId: string

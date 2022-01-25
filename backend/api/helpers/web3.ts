@@ -3,9 +3,8 @@ import { parseUnits } from "ethers/lib/utils";
 import Web3 from "web3";
 import { erc20Abi } from "../common/abis/erc20Abi";
 import { BuildBridgeTxResponseDto, IsApprovedDto } from "../common/dtos";
-import * as dotenv from "dotenv";
+import "dotenv/config";
 
-dotenv.config({ path: __dirname + "/.env" });
 const { ETH_INFURA_ID, ETH_NETWORK, ETH_CHAIN_ID } = process.env;
 
 export const getProviderUrl = () => {

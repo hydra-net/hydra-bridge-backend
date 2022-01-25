@@ -40,7 +40,7 @@ export const getTokensByChainId = async (
     for (const chainToken of chainTokens) {
       const dto: TokenResponseDto = mapTokenToDto(
         chainToken.token as Token,
-        chainToken.chain.id
+        chainToken.chain.chainId
       );
       tokens.push(dto);
     }
