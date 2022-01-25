@@ -77,7 +77,7 @@ export const getQuote = async (
 
     const bridges = await prisma.bridge.findMany({
       where: {
-        is_testnet: isTestnet ? true : false,
+        is_testnet: isTestnet,
       },
     });
 

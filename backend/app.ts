@@ -6,9 +6,7 @@ import swaggerUI from "swagger-ui-express";
 /* eslint-disable @typescript-eslint/no-var-requires */
 const swaggerDoc = require("./swagger.json");
 import cors from "cors";
-import * as dotenv from "dotenv";
-
-dotenv.config({ path: __dirname + "/.env" });
+import "dotenv/config";
 
 const { URL, VERSION, PORT, NODE_ENV } = process.env;
 

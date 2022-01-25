@@ -4,5 +4,6 @@ import "dotenv/config";
 
 const { NODE_ENV } = process.env;
 
-export const isTestnet = NODE_ENV === "dev" ? true : false;
+export const isTestnet =
+  NODE_ENV === "dev" || NODE_ENV === "staging" ? true : false;
 export const HYDRA_BRIDGE_INTERFACE = new Interface(hydraBridge);
