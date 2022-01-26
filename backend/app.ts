@@ -10,7 +10,8 @@ import "dotenv/config";
 
 const { URL, VERSION, PORT, NODE_ENV } = process.env;
 
-const port = process.env.PORT || 80;
+const port = parseInt(process.env.PORT) || 80;
+const host = "0.0.0.0";
 const app = express();
 app.use(cors());
 
@@ -34,7 +35,7 @@ app.use(`/api/v${VERSION}`, routes);
 
 app.use("/swagger", swaggerUI.serve, swaggerUI.setup(swaggerDoc));
 
-app.listen(port, () => {
+app.listen(port, host, () => {
   if (NODE_ENV === "dev") {
     console.log("\x1b[34m", `Host: ${URL}:${PORT}/api/v${VERSION}`);
     console.log("\x1b[34m", `Docs: ${URL}:${PORT}/swagger`);
