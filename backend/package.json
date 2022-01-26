@@ -30,10 +30,7 @@
     "winston": "^3.3.3"
   },
   "scripts": {
-    "start": "yarn dev",
-    "dev": "export NODE_ENV='dev' && yarn nodemon",
-    "staging": "export NODE_ENV='staging' && yarn nodemon",
-    "prod": "export NODE_ENV='production' && yarn nodemon",
+    "start": "yarn nodemon",
     "nodemon": "nodemon app.ts",
     "lint": "eslint .  --ext .ts",
     "lint-fix": "eslint --fix .  --ext .ts"
