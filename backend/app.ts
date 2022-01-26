@@ -6,10 +6,10 @@ import swaggerUI from "swagger-ui-express";
 /* eslint-disable @typescript-eslint/no-var-requires */
 const swaggerDoc = require("./swagger.json");
 import cors from "cors";
-import "dotenv/config";
+require("dotenv").config();
 
-const { VERSION } = process.env;
-const PORT = process.env.PORT || 3000;
+const { PORT, VERSION, NODE_ENV } = process.env;
+
 const app = express();
 app.use(cors());
 
@@ -33,4 +33,9 @@ app.use(`/api/v${VERSION}`, routes);
 
 app.use("/swagger", swaggerUI.serve, swaggerUI.setup(swaggerDoc));
 
-app.listen(PORT);
+app.listen(PORT, () => {
+  if (NODE_ENV === "dev") {
+    console.log("\x1b[34m", `Host: ${URL}:${PORT}/api/v${VERSION}`);
+    console.log("\x1b[34m", `Docs: ${URL}:${PORT}/swagger`);
+  }
+});
