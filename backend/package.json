@@ -31,7 +31,6 @@
   },
   "scripts": {
     "start": "nodemon app.ts",
-    "postinstall": "npm run build",
     "lint": "eslint .  --ext .ts",
     "lint-fix": "eslint --fix .  --ext .ts"
   },
