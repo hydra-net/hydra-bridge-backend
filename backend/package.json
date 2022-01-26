@@ -30,7 +30,6 @@
     "winston": "^3.3.3"
   },
   "scripts": {
-    "postinstall": "npm run build",
     "start": "nodemon app.ts",
     "lint": "eslint .  --ext .ts",
     "lint-fix": "eslint --fix .  --ext .ts"
