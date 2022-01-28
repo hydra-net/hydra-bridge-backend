@@ -8,7 +8,15 @@ export async function deployRootManager() {
   return rootManager;
 }
 
-export async function deployHopBridge() {
+export async function deployHopBridgeEth() {
+  const HopBridge = await ethers.getContractFactory("HopBridge");
+  const hopBridge = await HopBridge.deploy();
+  await hopBridge.deployed();
+
+  return hopBridge;
+}
+
+export async function deployHopBridgeErc20() {
   const HopBridge = await ethers.getContractFactory("HopBridge");
   const hopBridge = await HopBridge.deploy();
   await hopBridge.deployed();
@@ -27,13 +35,15 @@ export async function deployErc20() {
 export async function deployHydraBridge(
   rootManagerAddress: string,
   erc20Address: string,
-  hopBridgeAddress: string
+  hopBridgeEthAddress: string,
+  hopBridgeErc20Address: string
 ) {
   const HydraBridge = await ethers.getContractFactory("HydraBridge");
   const hydraBridge = await HydraBridge.deploy(
     rootManagerAddress,
     erc20Address,
-    hopBridgeAddress
+    hopBridgeEthAddress,
+    hopBridgeErc20Address
   );
 
   await hydraBridge.deployed();

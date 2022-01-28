@@ -12,7 +12,9 @@ export const getHopAmountOut = async (
   const hop = new Hop(networkName, getProvider());
   const bridge = hop.bridge(token);
   const amountOut = await bridge.getAmountOut(amount, chainFrom, chainTo);
-  return amountOut.toString();
+  return parseFloat(amountOut.toString()) === 0.0
+    ? amount.toString()
+    : amountOut.toString();
 };
 
 export const getHopChain = (name: string) => {

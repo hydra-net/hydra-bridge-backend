@@ -1,9 +1,10 @@
-import { ethers } from "ethers";
+import { BigNumber, ethers } from "ethers";
 import { parseUnits } from "ethers/lib/utils";
 import Web3 from "web3";
 import { erc20Abi } from "../common/abis/erc20Abi";
 import { BuildBridgeTxResponseDto, IsApprovedDto } from "../common/dtos";
 import "dotenv/config";
+import { consoleLogger, hydraLogger } from "./hydraLogger";
 
 const { ETH_INFURA_ID, ETH_NETWORK, ETH_CHAIN_ID } = process.env;
 
@@ -45,10 +46,18 @@ export const decodeParameter = (type: string = "uint256", data: string) => {
 export const calculateTransactionCost = async (
   params: BuildBridgeTxResponseDto
 ): Promise<string> => {
-  const gasPrice = await web3Initialised.eth.getGasPrice();
-  const gasLimit = await web3Initialised.eth.estimateGas(params);
-  const transactionFee = Number.parseInt(gasPrice) * gasLimit;
-  return ethers.utils.formatEther(transactionFee);
+  try {
+    const gasPrice = await web3Initialised.eth.getGasPrice();
+    const gasLimit = await web3Initialised.eth.estimateGas(params);
+    const transactionFee = BigNumber.from(gasPrice).mul(
+      BigNumber.from(gasLimit)
+    );
+    return ethers.utils.formatEther(transactionFee.toString());
+  } catch (e) {
+    consoleLogger.error("calculateTransactionCost error", e);
+    hydraLogger.error("calculateTransactionCost error", e);
+    return "0.0";
+  }
 };
 
 export const getIsApproved = async (dto: IsApprovedDto) => {

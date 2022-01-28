@@ -8,7 +8,7 @@ const swaggerDoc = require("./swagger.json");
 import cors from "cors";
 require("dotenv").config();
 
-const { PORT, VERSION, NODE_ENV } = process.env;
+const { URL, PORT, VERSION, NODE_ENV } = process.env;
 
 const app = express();
 app.use(cors());

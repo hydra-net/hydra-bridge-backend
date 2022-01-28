@@ -99,7 +99,7 @@ const Home = ({ chains }: Props) => {
     txHash,
     error,
   } = useHome();
-  const { address } = useWeb3();
+  const { address, network } = useWeb3();
   const isAbleToMove = isApproved || isEth;
   const isConnected = !!address;
 
@@ -150,7 +150,7 @@ const Home = ({ chains }: Props) => {
     });
   };
 
-  const debouncedQuote = useCallback(_.debounce(handleQuote, 1000), []); // eslint-disable-line react-hooks/exhaustive-deps
+  const debouncedQuote = useCallback(_.debounce(handleQuote, 3000), []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     async function getMoveTxData() {
@@ -399,6 +399,7 @@ const Home = ({ chains }: Props) => {
       </Root>
 
       <HydraModal
+        network={network!}
         subtitle="Transaction"
         onClose={handleCloseModal}
         isOpen={isModalOpen}

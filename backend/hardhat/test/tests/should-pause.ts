@@ -14,15 +14,20 @@ export async function shouldPause() {
   const rootManager = await RootManager.deploy();
   await rootManager.deployed();
 
-  const HopBridge = await ethers.getContractFactory("HopBridge");
-  const hopBridge = await HopBridge.deploy();
-  await hopBridge.deployed();
+  const HopBridgeEth = await ethers.getContractFactory("HopBridge");
+  const hopBridgeEth = await HopBridgeEth.deploy();
+  await hopBridgeEth.deployed();
+
+  const HopBridgeErc20 = await ethers.getContractFactory("HopBridge");
+  const hopBridgeErc20 = await HopBridgeErc20.deploy();
+  await hopBridgeErc20.deployed();
 
   const HydraBridge = await ethers.getContractFactory("HydraBridge");
   const hydraBridge = await HydraBridge.deploy(
     rootManager.address,
     myToken.address,
-    hopBridge.address
+    hopBridgeEth.address,
+    hopBridgeErc20.address
   );
 
   await hydraBridge.deployed();
@@ -30,7 +35,9 @@ export async function shouldPause() {
 
   const value = 200;
 
-  await expect(hydraBridge.functions.sendEthToPolygon(owner.address, {
-    value: value,
-  })).to.be.reverted
+  await expect(
+    hydraBridge.functions.sendEthToPolygon(owner.address, {
+      value: value,
+    })
+  ).to.be.reverted;
 }

@@ -71,7 +71,9 @@ type Props = {
 const BridgeRoute = ({ route, selectedRouteId, onRouteSelect }: Props) => {
   const theme = useTheme();
   const assetIconName =
-    route.bridgeRoute.fromAsset.symbol.toLocaleLowerCase() as IconKeys;
+    route.bridgeRoute.fromAsset.symbol.toLocaleLowerCase() === "eth"
+      ? ("ethereum" as IconKeys)
+      : (route.bridgeRoute.fromAsset.symbol.toLocaleLowerCase() as IconKeys);
   const isSelected = selectedRouteId === route.id;
 
   const formatAmountIn =

@@ -3,11 +3,12 @@ import { solidity } from "ethereum-waffle";
 import { shouldApproveContract } from "./tests/approve-contract";
 import { shouldSendEthPolygon } from "./tests/send-eth-polygon";
 import { shouldSetErc20Predicate } from "./tests/set-erc20-predicate";
-import { shouldSetHopBridge } from "./tests/set-hop-bridge";
+import { shouldSetHopBridgeEth } from "./tests/set-hop-bridge-eth";
 import { shouldSetRootManager } from "./tests/set-root-magager";
 import {
   deployErc20,
-  deployHopBridge,
+  deployHopBridgeErc20,
+  deployHopBridgeEth,
   deployHydraBridge,
   deployRootManager,
 } from "./shared/deployers";
@@ -17,19 +18,22 @@ import { shouldSendEthToHop } from "./tests/send-eth-to-hop";
 import { shouldPause } from "./tests/should-pause";
 import { shouldPauseUnpauseSend } from "./tests/shold-pause-unpause-send";
 import { shouldRescueFunds } from "./tests/should-rescue-funds";
+import { shouldSetHopBridgeErc20 } from "./tests/set-hop-bridge-erc20";
 
 chai.use(solidity);
 
 describe("Run all tests", function () {
-  let erc20, hydraBridge, rootManager, hopBridge;
+  let erc20, hydraBridge, rootManager, hopBridgeEth, hopBridgeErc20;
   before(async function () {
     erc20 = await deployErc20();
     rootManager = await deployRootManager();
-    hopBridge = await deployHopBridge();
+    hopBridgeEth = await deployHopBridgeEth();
+    hopBridgeErc20 = await deployHopBridgeErc20();
     hydraBridge = await deployHydraBridge(
       erc20.address,
       rootManager.address,
-      hopBridge.address
+      hopBridgeEth.address,
+      hopBridgeErc20.address
     );
   });
 
@@ -39,9 +43,15 @@ describe("Run all tests", function () {
     });
   });
 
-  describe("HydraBridge hop bridge address setting", function () {
-    it("Should set hop bridge address", async () => {
-      await shouldSetHopBridge(hydraBridge);
+  describe("HydraBridge hop bridge eth address setting", function () {
+    it("Should set hop bridge eth address", async () => {
+      await shouldSetHopBridgeEth(hydraBridge);
+    });
+  });
+
+  describe("HydraBridge hop bridge erc20 address setting", function () {
+    it("Should set hop bridge erc20 address", async () => {
+      await shouldSetHopBridgeErc20(hydraBridge);
     });
   });
 

@@ -67,6 +67,10 @@ node scripts/sample-script.js
 npx hardhat help
 ```
 
+```bash
+npx hardhat run hardhat/scripts/deployBridge.ts --network ropsten
+```
+
 # Database
 
 This project uses `Prisma ORM`. Check more here: https://www.prisma.io/

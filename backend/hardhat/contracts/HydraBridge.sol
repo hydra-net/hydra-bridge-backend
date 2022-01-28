@@ -24,14 +24,19 @@ contract HydraBridge is Ownable, Pausable {
 
 
     /// Address of hop bridge contract
-    address public _hopBridge;
+    address public _hopBridgeEth;
+
+    /// Address of hop bridge contract
+    address public _hopBridgeErc20;
+
 
     event MoveCompleted(address, uint256);
 
-    constructor(address polygonRootChainManager, address erc20Predicate, address hopBridge) {
+    constructor(address polygonRootChainManager, address erc20Predicate, address hopBridgeEth, address hopBridgeErc20) {
         _polygonRootChainManager = polygonRootChainManager;
         _erc20Predicate =  erc20Predicate;
-        _hopBridge = hopBridge;
+        _hopBridgeEth = hopBridgeEth;
+        _hopBridgeErc20 = hopBridgeErc20;
     }
 
     /// Send funds to polygon bridge
@@ -67,8 +72,8 @@ contract HydraBridge is Ownable, Pausable {
     /// @dev transfer tokens to HydraBridge contract and bridge them to polygon through hop
     function sendToL2Hop(address rootToken, address recipient, uint256 chainId,uint256 amount,uint256 amountOutMin,uint256 deadline,address relayer,uint256 relayerFee) external whenNotPaused {
         _checkBeforeTransfer(amount, recipient);
-       _transferERC20(amount, rootToken, _hopBridge, recipient);
-        IL1_Bridge(_hopBridge).sendToL2(chainId,recipient,amount,amountOutMin,deadline,relayer,relayerFee);
+       _transferERC20(amount, rootToken, _hopBridgeErc20, recipient);
+        IL1_Bridge(_hopBridgeErc20).sendToL2(chainId,recipient,amount,amountOutMin,deadline,relayer,relayerFee);
         emit MoveCompleted(recipient,amount);
     }
 
@@ -82,7 +87,7 @@ contract HydraBridge is Ownable, Pausable {
     function sendEthToL2Hop(address recipient, uint256 chainId,uint256 amountOutMin,uint256 deadline,address relayer,uint256 relayerFee) payable external whenNotPaused {
         _checkBeforeTransfer(msg.value, recipient);
 
-        IL1_Bridge(_hopBridge).sendToL2{value:msg.value}(chainId,recipient,msg.value,amountOutMin,deadline,relayer,relayerFee);
+        IL1_Bridge(_hopBridgeEth).sendToL2{value:msg.value}(chainId,recipient,msg.value,amountOutMin,deadline,relayer,relayerFee);
         emit MoveCompleted(recipient,msg.value);
     }
 
@@ -110,10 +115,16 @@ contract HydraBridge is Ownable, Pausable {
         _polygonRootChainManager = polygonRootChainManager;
     }
 
-    /// Set hop bridge address
-    /// @param hopBridge address
-    function setHopBridge(address hopBridge) external onlyOwner{
-        _hopBridge = hopBridge;
+    /// Set hop bridge l1 eth address address
+    /// @param hopBridgeEth address
+    function setHopBridgeEth(address hopBridgeEth) external onlyOwner{
+        _hopBridgeEth = hopBridgeEth;
+    }
+
+    /// Set hop bridge l1 erc20 address address
+    /// @param hopBridgeErc20 address
+    function setHopBridgeErc20(address hopBridgeErc20) external onlyOwner{
+        _hopBridgeErc20 = hopBridgeErc20;
     }
 
     /// Set erc20 predicate

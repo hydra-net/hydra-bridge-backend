@@ -26,18 +26,24 @@ const Content = styled.div`
 Modal.setAppElement("#root");
 
 type Props = {
+  network: number;
   subtitle: string;
   isOpen: boolean;
   onClose: () => void;
   tx: string;
 };
-const HydraModal = ({ subtitle, tx, isOpen, onClose }: Props) => {
+const HydraModal = ({ network, subtitle, tx, isOpen, onClose }: Props) => {
+  let transUrl = `https://etherscan.io/tx/${tx}`;
+
+  if (network === 5) {
+    transUrl = `https://goerli.etherscan.io/tx/${tx}`;
+  }
   return (
     <Modal isOpen={isOpen} onRequestClose={onClose} style={customStyles}>
       <h2>{subtitle}</h2>
 
       <Content>
-        <a href={`https://goerli.etherscan.io/tx/${tx}`} target="_blank" rel="noreferrer">
+        <a href={transUrl} target="_blank" rel="noreferrer">
           {tx}
         </a>
       </Content>

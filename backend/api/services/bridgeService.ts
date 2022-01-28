@@ -22,7 +22,7 @@ import { mapRouteToDto, mapTokenToDto } from "../helpers/mappers/mapperDto";
 import { calculateTransactionCost, getIsApproved } from "../helpers/web3";
 import { fetchEthUsdPrice } from "./coingeckoService";
 import { getHopAmountOut, getHopChain } from "../helpers/hopHelper";
-import { parseUnits } from "ethers/lib/utils";
+import { formatEther, formatUnits, parseUnits } from "ethers/lib/utils";
 import { HYDRA_BRIDGE_INTERFACE, isTestnet } from "../common/constants";
 import "dotenv/config";
 
@@ -127,14 +127,25 @@ export const getQuote = async (
           recipient: dto.recipient,
           tokenAddress: token.address,
         });
+      }
 
-        amountOut = await getHopAmountOut(
+      if (
+        isApproved ||
+        (isEth &&
+          !isTestnet &&
+          (bridge.name === "hop-bridge" || bridge.name === "hop-bridge-goerli"))
+      ) {
+        const amountOutRes = await getHopAmountOut(
           ETH_NETWORK,
           token.symbol,
           getHopChain(chainFrom.name),
           getHopChain(chainTo.name),
           parseUnits(dto.amount, token.decimals)
         );
+
+        amountOut = isEth
+          ? formatEther(amountOutRes).toString()
+          : formatUnits(amountOutRes, token.decimals);
       }
 
       const txCoast =
@@ -146,9 +157,9 @@ export const getQuote = async (
         route,
         ETH_CONTRACT,
         bridge,
-        mapTokenToDto(token, chainFrom.id),
-        chainFrom.id,
-        chainTo.id,
+        mapTokenToDto(token, chainFrom.chainId),
+        chainFrom.chainId,
+        chainTo.chainId,
         dto.amount,
         amountOut,
         txDto,
@@ -159,10 +170,10 @@ export const getQuote = async (
       routes.sort((a, b) => a.transactionCoastUsd - b.transactionCoastUsd);
     }
     const quoteResponse: QuoteResponseDto = {
-      fromAsset: mapTokenToDto(token, chainFrom.id),
-      fromChainId: chainFrom.id,
-      toAsset: mapTokenToDto(token, chainTo.id),
-      toChainId: chainTo.id,
+      fromAsset: mapTokenToDto(token, chainFrom.chainId),
+      fromChainId: chainFrom.chainId,
+      toAsset: mapTokenToDto(token, chainTo.chainId),
+      toChainId: chainTo.chainId,
       routes: routes,
       amount: dto.amount,
       isApproved: isApproved,
@@ -235,7 +246,6 @@ export const buildTx = async (
     if (!route) {
       return response;
     }
-
     const txRouteDto: GetBridgeTxRequestDto = {
       recipient: dto.recipient,
       amount: dto.amount,
@@ -243,6 +253,7 @@ export const buildTx = async (
       tokenSymbol: token.symbol,
       decimals: token.decimals,
     };
+
     if (
       route.bridge.name === "polygon-bridge" ||
       route.bridge.name === "polygon-bridge-goerli"
@@ -251,7 +262,6 @@ export const buildTx = async (
       response.data = buildResp;
       return response;
     }
-
     if (
       route.bridge.name === "hop-bridge" ||
       route.bridge.name === "hop-bridge-goerli"
@@ -322,6 +332,27 @@ const getHopRoute = async (
       data: sendToL2HopData,
       to: ETH_CONTRACT,
       from: dto.recipient,
+    };
+  }
+
+  if (!isTestnet) {
+    const sendEthToL2HopData = HYDRA_BRIDGE_INTERFACE.encodeFunctionData(
+      "sendEthToL2Hop",
+      [
+        dto.recipient,
+        chainToId,
+        0,
+        getTimestamp(30),
+        HOP_RELAYER,
+        HOP_RELAYER_FEE,
+      ]
+    );
+
+    return {
+      data: sendEthToL2HopData,
+      to: ETH_CONTRACT,
+      from: dto.recipient,
+      value: ethers.utils.parseEther(dto.amount).toHexString(),
     };
   }
 
