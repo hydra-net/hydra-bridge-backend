@@ -38,6 +38,7 @@ const HydraModal = ({ network, subtitle, tx, isOpen, onClose }: Props) => {
   if (network === 5) {
     transUrl = `https://goerli.etherscan.io/tx/${tx}`;
   }
+
   return (
     <Modal isOpen={isOpen} onRequestClose={onClose} style={customStyles}>
       <h2>{subtitle}</h2>
