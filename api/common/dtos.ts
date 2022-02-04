@@ -14,7 +14,6 @@ export interface ApiResponseDto<T> {
 export interface AllowanceRequestDto extends Query {
   chainId: string;
   owner: string;
-  spender: string;
   tokenAddress: string;
 }
 
@@ -26,7 +25,6 @@ export interface AllowanceResponseDto {
 export interface BuildAllowanceRequestDto extends Query {
   chainId: string;
   owner: string;
-  spender: string;
   tokenAddress: string;
   amount: string;
 }

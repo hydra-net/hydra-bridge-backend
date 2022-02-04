@@ -15,6 +15,8 @@ import { consoleLogger, hydraLogger } from "../helpers/hydraLogger";
 import prisma from "../helpers/db";
 import { NotFound, ServerError } from "../helpers/serviceErrorHelper";
 
+const { ETH_CONTRACT } = process.env;
+
 const ERC20_INTERFACE = new Interface(erc20Abi);
 
 export const getAllowance = async (dto: AllowanceRequestDto) => {
@@ -51,7 +53,7 @@ export const getAllowance = async (dto: AllowanceRequestDto) => {
 
     const res: BigNumber = await rootToken.functions.allowance(
       dto.owner,
-      dto.spender
+      ETH_CONTRACT
     );
     allowanceResp.result.tokenAddress = token.address;
     allowanceResp.result.value = res.toString();
@@ -101,7 +103,7 @@ export const buildTx = async (
 
     const allwanceRes = await rootToken.functions.allowance(
       dto.owner,
-      dto.spender
+      ETH_CONTRACT
     );
 
     const parsedAmount = parseUnits(dto.amount, token.decimals);
@@ -109,7 +111,7 @@ export const buildTx = async (
     const amountAllowed = ethers.BigNumber.from(allwanceRes.toString());
     if (amountToSpend.gt(amountAllowed)) {
       const approveData = ERC20_INTERFACE.encodeFunctionData("approve", [
-        dto.spender,
+        ETH_CONTRACT,
         ethers.utils.hexlify(amountToSpend),
       ]);
       buildAllowanceResp.result = {

@@ -8,13 +8,12 @@ export const checkAllowance = async (
   req: ReqQuery<AllowanceRequestDto>,
   res: Response
 ) => {
-  const { chainId, owner, spender, tokenAddress } = req.query;
+  const { chainId, owner, tokenAddress } = req.query;
   handleResponse(
     res,
     await getAllowance({
       chainId,
       owner,
-      spender,
       tokenAddress,
     })
   );
@@ -24,13 +23,12 @@ export const buildAllowanceTx = async (
   req: ReqQuery<BuildAllowanceRequestDto>,
   res: Response
 ) => {
-  const { chainId, owner, spender, amount, tokenAddress } = req.query;
+  const { chainId, owner, amount, tokenAddress } = req.query;
   handleResponse(
     res,
     await buildTx({
       chainId,
       owner,
-      spender,
       amount,
       tokenAddress,
     })

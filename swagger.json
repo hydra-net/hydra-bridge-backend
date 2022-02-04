@@ -33,12 +33,6 @@
             "required": "true"
           },
           {
-            "name": "spender",
-            "in": "query",
-            "description": "Spender contract address",
-            "required": "true"
-          },
-          {
             "name": "tokenAddress",
             "in": "query",
             "description": "Token address of tokens to spend",
@@ -100,12 +94,6 @@
             "name": "owner",
             "in": "query",
             "description": "Owner of address that checks allowance",
-            "required": "true"
-          },
-          {
-            "name": "spender",
-            "in": "query",
-            "description": "Spender contract address",
             "required": "true"
           },
           {
