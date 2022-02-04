@@ -17,14 +17,12 @@ export const validateCommonTokens = validate([query("chainId").isNumeric()]);
 export const validateCheckAllowance = validate([
   query("chainId").isNumeric(),
   query("owner").custom(isAddressValid),
-  query("spender").custom(isAddressValid),
   query("tokenAddress").custom(isAddressValid),
 ]);
 
 export const validateBuildAllowanceTx = validate([
   query("chainId").isNumeric(),
   query("owner").custom(isAddressValid),
-  query("spender").custom(isAddressValid),
   query("amount").isNumeric(),
   query("tokenAddress").custom(isAddressValid),
 ]);
