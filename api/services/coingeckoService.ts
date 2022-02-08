@@ -11,8 +11,8 @@ export const fetchEthUsdPrice = async (): Promise<number> => {
 
     return res.data.ethereum.usd;
   } catch (e) {
-    consoleLogger.error(e);
-    hydraLogger.error(e);
+    consoleLogger.error("Can't get price coingecko", e);
+    hydraLogger.error("Can't get price coingecko", e);
     return Promise.reject("Can't get price coingecko");
   }
 };
@@ -26,18 +26,18 @@ export const fetchAllTokenPrices = async (): Promise<
       `https://api.coingecko.com/api/v3/simple/price?ids=ethereum,usd-coin&vs_currencies=usd`
     );
 
-    for (const i in response.data) {
-      const tokeySymbol = getGeckoToTokenSymbol(i);
+    for (const geckoSymbol in response.data) {
+      const tokeySymbol = getGeckoToTokenSymbol(geckoSymbol);
       const tokenPriceEth: TokenPriceResponseDto = {
         symbol: tokeySymbol,
-        price: response.data[i].usd,
+        price: response.data[geckoSymbol].usd,
       };
       tokenPrices.push(tokenPriceEth);
     }
     return tokenPrices;
   } catch (e) {
-    consoleLogger.error(e);
-    hydraLogger.error(e);
+    consoleLogger.error("Can't get price coingecko", e);
+    hydraLogger.error("Can't get price coingecko", e);
     return Promise.reject("Can't get price coingecko");
   }
 };

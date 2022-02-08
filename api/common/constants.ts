@@ -1,5 +1,5 @@
 import { Interface } from "ethers/lib/utils";
-import { hydraBridge } from "../services/contractInterfaces/contractInterfaces";
+import { hydraBridge } from "../helpers/contractInterfaces/contractInterfaces";
 import "dotenv/config";
 
 const { NODE_ENV } = process.env;

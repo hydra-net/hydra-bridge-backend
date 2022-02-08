@@ -1,14 +1,10 @@
+import { BigNumber } from "ethers";
 import { Query } from "express-serve-static-core";
 
 export interface ServiceResponseDto<T> {
   status: number;
   message?: string;
-  data?: ApiResponseDto<T>;
-}
-
-export interface ApiResponseDto<T> {
-  success: boolean;
-  result: T;
+  data?: T;
 }
 
 export interface AllowanceRequestDto extends Query {
@@ -149,7 +145,6 @@ export interface TokenPriceResponseDto {
 
 export interface IsApprovedDto {
   tokenAddress: string;
-  allowanceContractAddr: string;
   amount: string;
   recipient: string;
   decimals: number;
@@ -157,4 +152,9 @@ export interface IsApprovedDto {
 
 export interface BridgeTokenRequestDto extends Query {
   chainId: string;
+}
+
+export interface AllowanceAmountsDto {
+  amountToSpend: BigNumber;
+  amountAllowed: BigNumber;
 }

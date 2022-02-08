@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { handleResponse } from "../helpers/controllerHandler";
-import { getChains, getTokens } from "../services/commonService/commonService";
+import { getChains, getTokens } from "../services/commonService";
 import { BridgeTokenRequestDto } from "../common/dtos";
 import { ReqQuery } from "../common/interfaces";
 
