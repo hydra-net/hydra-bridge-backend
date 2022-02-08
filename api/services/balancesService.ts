@@ -1,33 +1,22 @@
-import {
-  ApiResponseDto,
-  ServiceResponseDto,
-  TokenBalanceResponseDto,
-} from "../common/dtos";
+import { ServiceResponseDto, TokenBalanceResponseDto } from "../common/dtos";
 import { ServerError } from "../helpers/serviceErrorHelper";
 import { consoleLogger, hydraLogger } from "../helpers/hydraLogger";
-import { ethers } from "ethers";
-import { erc20Abi } from "../common/abis/erc20Abi";
-import { getProvider, getProviderUrl } from "../helpers/web3";
-import { getTokensByChainId } from "./commonService/commonServiceHelper";
+import { getProviderUrl } from "../helpers/web3";
+import { getTokensByChainId } from "../helpers/database/commonServiceDbHelper";
 import { mapTokenBalanceToDto } from "../helpers/mappers/mapperDto";
 import { fetchAllTokenPrices } from "./coingeckoService";
 import Web3 from "web3";
+import { Asset } from "../common/enums";
+import { getErc20TokenBalance } from "../helpers/contractHelper";
 
-export const getWalletBalances = async (address: string, chainId: string) => {
-  const balancesResponse: ApiResponseDto<TokenBalanceResponseDto[]> = {
-    success: true,
-    result: null,
-  };
-  const response: ServiceResponseDto<TokenBalanceResponseDto[]> = {
-    status: 200,
-    data: balancesResponse,
-  };
-
+export const getWalletBalances = async (
+  address: string,
+  chainId: string
+): Promise<ServiceResponseDto<TokenBalanceResponseDto[]>> => {
   try {
     const parsedChainId = parseInt(chainId);
 
     const tokens = await getTokensByChainId(parsedChainId);
-    const provider = getProvider();
     const tokenBalances: TokenBalanceResponseDto[] = [];
     const tokenPrices = await fetchAllTokenPrices();
 
@@ -36,7 +25,7 @@ export const getWalletBalances = async (address: string, chainId: string) => {
         (tokenPrice) => tokenPrice.symbol === token.symbol.toLowerCase()
       );
 
-      if (token.symbol === "ETH") {
+      if (token.symbol.toString().toLowerCase() === Asset[Asset.eth]) {
         const web3 = new Web3(getProviderUrl());
         const balance = await web3.eth.getBalance(address);
         const tokenBalance = mapTokenBalanceToDto(
@@ -46,29 +35,24 @@ export const getWalletBalances = async (address: string, chainId: string) => {
         );
         tokenBalances.push(tokenBalance);
       } else {
-        const tokenContract = new ethers.Contract(
-          token.address,
-          erc20Abi,
-          provider
-        );
-
-        const res = await tokenContract.functions.balanceOf(address);
-
+        const balance = await getErc20TokenBalance(token.address, address);
         const tokenBalance = mapTokenBalanceToDto(
           token,
           tokenPrice.price,
-          res.toString()
+          balance.toString()
         );
 
         tokenBalances.push(tokenBalance);
       }
     }
-    balancesResponse.result = tokenBalances;
-    response.data = balancesResponse;
-    return response;
+
+    return {
+      status: 200,
+      data: tokenBalances,
+    };
   } catch (e) {
-    consoleLogger.error(e);
-    hydraLogger.error(e);
+    consoleLogger.error("Error getting wallet balances", e);
+    hydraLogger.error("Error getting wallet balances", e);
     return ServerError();
   }
 };

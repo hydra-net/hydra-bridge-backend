@@ -1,8 +1,6 @@
 import { BigNumber, ethers } from "ethers";
-import { parseUnits } from "ethers/lib/utils";
 import Web3 from "web3";
-import { erc20Abi } from "../common/abis/erc20Abi";
-import { BuildBridgeTxResponseDto, IsApprovedDto } from "../common/dtos";
+import { BuildBridgeTxResponseDto } from "../common/dtos";
 import "dotenv/config";
 import { consoleLogger, hydraLogger } from "./hydraLogger";
 
@@ -58,19 +56,4 @@ export const calculateTransactionCost = async (
     hydraLogger.error("calculateTransactionCost error", e);
     return "0.0";
   }
-};
-
-export const getIsApproved = async (dto: IsApprovedDto) => {
-  const { tokenAddress, recipient, allowanceContractAddr, amount, decimals } =
-    dto;
-  const rootToken = new ethers.Contract(tokenAddress, erc20Abi, getProvider());
-
-  const res = await rootToken.functions.allowance(
-    recipient,
-    allowanceContractAddr
-  );
-
-  const amountToSpend = parseUnits(amount, decimals);
-  const amountAllowed = ethers.BigNumber.from(res.toString());
-  return amountAllowed.gte(amountToSpend);
 };

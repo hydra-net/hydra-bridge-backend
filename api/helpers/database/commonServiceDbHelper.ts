@@ -1,16 +1,13 @@
 import { TokenResponseDto } from "../../common/dtos";
-import prisma from "../../helpers/db";
-import { mapTokenToDto } from "../../helpers/mappers/mapperDto";
+import prisma from "./db";
+import { mapTokenToDto } from "../mappers/mapperDto";
 import { Token } from "@prisma/client";
+import { getChainByChainId } from "./chainsDbHelper";
 
 export const getTokensByChainId = async (
   chainId: number
 ): Promise<TokenResponseDto[]> => {
-  const chain = await prisma.chain.findFirst({
-    where: {
-      chainId: chainId,
-    },
-  });
+  const chain = await getChainByChainId(chainId);
 
   const tokens: TokenResponseDto[] = [];
   if (chain) {

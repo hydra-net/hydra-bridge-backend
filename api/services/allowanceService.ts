@@ -1,64 +1,52 @@
 import {
   BuildAllowanceRequestDto,
   AllowanceRequestDto,
-  ApiResponseDto,
   ServiceResponseDto,
-  AllowanceResponseDto,
   BuildAllowanceResponseDto,
+  AllowanceResponseDto,
 } from "../common/dtos";
-import { getProvider } from "../helpers/web3";
-import { BigNumber, ethers } from "ethers";
-import { erc20Abi } from "../common/abis/erc20Abi";
-import { Interface } from "@ethersproject/abi";
-import { parseUnits } from "ethers/lib/utils";
 import { consoleLogger, hydraLogger } from "../helpers/hydraLogger";
-import prisma from "../helpers/db";
-import { NotFound, ServerError } from "../helpers/serviceErrorHelper";
+import {
+  BadRequest,
+  NotFound,
+  ServerError,
+} from "../helpers/serviceErrorHelper";
+import {
+  getAlowanceAmounts,
+  getEncodedApproveFunction,
+  getErc20AllowanceAmount,
+} from "../helpers/contractHelper";
+import { getChainByChainId } from "../helpers/database/chainsDbHelper";
+import { getTokenByAddress } from "../helpers/database/tokensDbHelper";
 
-const { ETH_CONTRACT } = process.env;
-
-const ERC20_INTERFACE = new Interface(erc20Abi);
-
-export const getAllowance = async (dto: AllowanceRequestDto) => {
-  const allowanceResp: ApiResponseDto<AllowanceResponseDto> = {
-    success: true,
-    result: {
-      value: "0",
-      tokenAddress: "",
-    },
-  };
-  const response: ServiceResponseDto<AllowanceResponseDto> = {
-    status: 200,
-    data: allowanceResp,
-  };
-
+export const getAllowance = async (
+  dto: AllowanceRequestDto
+): Promise<ServiceResponseDto<AllowanceResponseDto>> => {
   try {
-    const chain = await prisma.chain.findFirst({
-      where: { chainId: Number.parseInt(dto.chainId) },
-    });
+    const chain = await getChainByChainId(Number.parseInt(dto.chainId));
 
-    const token = await prisma.token.findFirst({
-      where: { address: dto.tokenAddress },
-    });
-
-    if (!chain || !token) {
-      return NotFound();
+    if (!chain) {
+      return NotFound("Chain not found!");
     }
 
-    const rootToken = new ethers.Contract(
-      token.address,
-      erc20Abi,
-      getProvider()
+    const token = await getTokenByAddress(dto.tokenAddress);
+
+    if (!token) {
+      return NotFound("Token not found!");
+    }
+
+    const allowanceAmount = await getErc20AllowanceAmount(
+      dto.tokenAddress,
+      dto.owner
     );
 
-    const res: BigNumber = await rootToken.functions.allowance(
-      dto.owner,
-      ETH_CONTRACT
-    );
-    allowanceResp.result.tokenAddress = token.address;
-    allowanceResp.result.value = res.toString();
-    response.data = allowanceResp;
-    return response;
+    return {
+      status: 200,
+      data: {
+        tokenAddress: token.address,
+        value: allowanceAmount.toString(),
+      },
+    };
   } catch (e) {
     consoleLogger.error(e);
     hydraLogger.error(e);
@@ -69,59 +57,37 @@ export const getAllowance = async (dto: AllowanceRequestDto) => {
 export const buildTx = async (
   dto: BuildAllowanceRequestDto
 ): Promise<ServiceResponseDto<BuildAllowanceResponseDto>> => {
-  const buildAllowanceResp: ApiResponseDto<BuildAllowanceResponseDto> = {
-    success: true,
-    result: {
-      data: "",
-      to: "",
-      from: "",
-    },
-  };
-
-  const response: ServiceResponseDto<BuildAllowanceResponseDto> = {
-    status: 200,
-    data: buildAllowanceResp,
-  };
-
   try {
-    const chain = await prisma.chain.findFirst({
-      where: { chainId: Number.parseInt(dto.chainId) },
-    });
+    const chain = await getChainByChainId(Number.parseInt(dto.chainId));
 
-    const token = await prisma.token.findFirst({
-      where: { address: dto.tokenAddress },
-    });
-
-    if (!chain || !token) {
-      return NotFound();
+    if (!chain) {
+      return NotFound("Chain not found!");
     }
-    const rootToken = new ethers.Contract(
+
+    const token = await getTokenByAddress(dto.tokenAddress);
+
+    if (!token) {
+      return NotFound("Token not found!");
+    }
+
+    const { amountToSpend, amountAllowed } = await getAlowanceAmounts(
       dto.tokenAddress,
-      erc20Abi,
-      getProvider()
-    );
-
-    const allwanceRes = await rootToken.functions.allowance(
       dto.owner,
-      ETH_CONTRACT
+      dto.amount,
+      token.decimals
     );
 
-    const parsedAmount = parseUnits(dto.amount, token.decimals);
-    const amountToSpend = ethers.BigNumber.from(parsedAmount.toString());
-    const amountAllowed = ethers.BigNumber.from(allwanceRes.toString());
     if (amountToSpend.gt(amountAllowed)) {
-      const approveData = ERC20_INTERFACE.encodeFunctionData("approve", [
-        ETH_CONTRACT,
-        ethers.utils.hexlify(amountToSpend),
-      ]);
-      buildAllowanceResp.result = {
-        data: approveData,
-        to: dto.tokenAddress,
-        from: dto.owner,
+      return {
+        status: 200,
+        data: {
+          data: getEncodedApproveFunction(amountToSpend),
+          to: dto.tokenAddress,
+          from: dto.owner,
+        },
       };
-      response.data = buildAllowanceResp;
     }
-    return response;
+    return BadRequest("Amount allowed bigger than amount to spend");
   } catch (e) {
     consoleLogger.error(e);
     hydraLogger.error(e);

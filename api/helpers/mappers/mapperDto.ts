@@ -1,10 +1,11 @@
 import {
   BuildBridgeTxResponseDto,
+  ChainResponseDto,
   RouteResponseDto,
   TokenBalanceResponseDto,
   TokenResponseDto,
 } from "../../common/dtos";
-import { Token, Bridge, Route } from "@prisma/client";
+import { Token, Bridge, Route, Chain } from "@prisma/client";
 
 export const mapTokenToDto = (
   token: Token,
@@ -70,5 +71,28 @@ export const mapTokenBalanceToDto = (
     price: price,
     amount: amount,
     currency: "USD",
+  };
+};
+
+export const mapToChainResponseDto = (
+  chain: Chain,
+  token: Token
+): ChainResponseDto => {
+  return {
+    chainId: chain.chainId,
+    name: chain.name,
+    isLayer1: chain.is_layer1,
+    isTestnet: chain.is_testnet,
+    isReceivingEnabled: chain.is_receiving_enabled,
+    isSendingEnabled: chain.is_sending_enabled,
+    currency: {
+      id: token.id,
+      name: token.name,
+      chainId: chain.chainId,
+      address: token.address,
+      decimals: token.decimals,
+      symbol: token.symbol,
+    },
+    explorers: chain.explorers,
   };
 };
