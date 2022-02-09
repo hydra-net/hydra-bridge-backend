@@ -1,7 +1,6 @@
 import { formatEther, formatUnits, parseUnits } from "ethers/lib/utils";
-import { isTestnet } from "../../common/constants";
 import { consoleLogger, hydraLogger } from "../hydraLogger";
-import { Chain, Token } from "@prisma/client";
+import { Bridge, Chain, Route, Token } from "@prisma/client";
 import {
   BuildBridgeTxResponseDto,
   GetBridgeTxRequestDto,
@@ -11,19 +10,24 @@ import {
 import { Asset } from "../../common/enums";
 import { fetchEthUsdPrice } from "../../services/coingeckoService";
 import { getRoutesByChainBridgeIds } from "../database/routesDbHelper";
-import { calculateTransactionCost } from "../web3";
+import { getCalculateTransactionCost, getEthWalletBalance } from "../web3";
 import { getHopAmountOut, getHopChain } from "../hopHelper";
-import { mapRouteToDto, mapTokenToDto } from "../mappers/mapperDto";
+import {
+  mapRouteToDto,
+  mapToGetBridgeTxRequestDto,
+  mapTokenToDto,
+} from "../mappers/mapperDto";
 import { ethers } from "ethers";
 import {
+  getErc20TokenBalance,
+  getHydraBridgeContractAddress,
+  getIsEnoughBalance,
   getSendEthToL2HopEncodedFunction,
   getSendEthToPolygonEncodedFunction,
   getSendToL2HopEncodedFunction,
   getSendToPolygonEncodedFunction,
 } from "../contractHelper";
 import { getAllBridges } from "../database/bridgesDbHelper";
-
-const { ETH_CONTRACT, ETH_NETWORK } = process.env;
 
 export const getQuoteRoutes = async (
   token: Token,
@@ -46,71 +50,23 @@ export const getQuoteRoutes = async (
     );
     const routes: RouteResponseDto[] = [];
 
-    let amountOut: string = dto.amount;
     for (const route of dbRoutes) {
       const bridge = bridgesDb.find((br) => br.id === route.bridge_id);
-      let txDto: BuildBridgeTxResponseDto = {
-        data: "",
-        to: "",
-        from: "",
-      };
-      const txRouteDto: GetBridgeTxRequestDto = {
-        recipient: dto.recipient,
-        amount: dto.amount,
-        tokenAddress: token.address,
-        tokenSymbol: token.symbol,
-        decimals: token.decimals,
-      };
-      if (
-        bridge.name === "polygon-bridge" ||
-        bridge.name === "polygon-bridge-goerli"
-      ) {
-        txDto = await getPolygonRoute(txRouteDto);
-      }
-
-      if (bridge.name === "hop-bridge" || bridge.name === "hop-bridge-goerli") {
-        txDto = await getHopRoute(txRouteDto, chainTo.chainId);
-      }
-
-      if (
-        isApproved ||
-        (isEth &&
-          !isTestnet &&
-          (bridge.name === "hop-bridge" || bridge.name === "hop-bridge-goerli"))
-      ) {
-        const amountOutRes = await getHopAmountOut(
-          ETH_NETWORK,
-          token.symbol,
-          getHopChain(chainFrom.name),
-          getHopChain(chainTo.name),
-          parseUnits(dto.amount, token.decimals)
-        );
-        amountOut = isEth
-          ? formatEther(amountOutRes).toString()
-          : formatUnits(amountOutRes, token.decimals);
-      }
-
-      const txCoast =
-        isApproved || (isEth && txDto.data !== "")
-          ? await calculateTransactionCost(txDto)
-          : "0.0";
-
-      const routeDto = mapRouteToDto(
+      const routeDto = await getRouteDto(
         route,
-        ETH_CONTRACT,
+        dto,
+        token,
         bridge,
-        mapTokenToDto(token, chainFrom.chainId),
-        chainFrom.chainId,
-        chainTo.chainId,
-        dto.amount,
-        amountOut,
-        txDto,
-        parseFloat(txCoast) * ethPrice
+        chainFrom,
+        chainTo,
+        isApproved,
+        isEth,
+        ethPrice
       );
 
       routes.push(routeDto);
-      routes.sort((a, b) => a.transactionCoastUsd - b.transactionCoastUsd);
     }
+    routes.sort((a, b) => a.transactionCoastUsd - b.transactionCoastUsd);
     return routes;
   } catch (e) {
     consoleLogger.error("Error getting quote routes", e);
@@ -118,20 +74,167 @@ export const getQuoteRoutes = async (
   }
 };
 
+export const getRouteDto = async (
+  route: Route,
+  dto: QuoteRequestDto,
+  token: Token,
+  bridge: Bridge,
+  chainFrom: Chain,
+  chainTo: Chain,
+  isApproved: boolean,
+  isEth: boolean,
+  ethPrice: number
+) => {
+  let txDto: BuildBridgeTxResponseDto = {
+    data: "",
+    to: "",
+    from: "",
+  };
+
+  const txRouteDto = mapToGetBridgeTxRequestDto(dto, token);
+  if (
+    bridge.name === "polygon-bridge" ||
+    bridge.name === "polygon-bridge-goerli"
+  ) {
+    txDto = await getPolygonRoute(txRouteDto, chainFrom.chainId);
+  }
+
+  if (bridge.name === "hop-bridge" || bridge.name === "hop-bridge-goerli") {
+    txDto = await getHopRoute(
+      txRouteDto,
+      chainFrom.chainId,
+      chainTo.chainId,
+      bridge.is_testnet
+    );
+  }
+
+  const transactonCoast = await getTransactionCoast(
+    isEth,
+    isApproved,
+    dto,
+    chainFrom,
+    token,
+    txDto
+  );
+
+  return mapRouteToDto(
+    route,
+    getHydraBridgeContractAddress(chainFrom.chainId),
+    bridge,
+    mapTokenToDto(token, chainFrom.chainId, chainFrom.name),
+    chainFrom.chainId,
+    chainTo.chainId,
+    dto.amount,
+    await getAmountOut(
+      isApproved,
+      isEth,
+      dto.amount,
+      bridge,
+      chainFrom,
+      chainTo,
+      token
+    ),
+    txDto,
+    parseFloat(transactonCoast) * ethPrice
+  );
+};
+
+export const getTransactionCoast = async (
+  isEth: boolean,
+  isApproved: boolean,
+  dto: QuoteRequestDto,
+  chainFrom: Chain,
+  token: Token,
+  txDto: BuildBridgeTxResponseDto
+) => {
+  const balance = await getWalletBalance(
+    isEth,
+    chainFrom,
+    token.address,
+    dto.recipient
+  );
+
+  const isEnoughBalance = getIsEnoughBalance(
+    dto.amount.toString(),
+    token.decimals,
+    balance
+  );
+
+  return isEnoughBalance && (isApproved || (isEth && txDto.data !== ""))
+    ? await getCalculateTransactionCost(txDto, chainFrom.name)
+    : "0.0";
+};
+
+export const getWalletBalance = async (
+  isEth: boolean,
+  chainFrom: Chain,
+  tokenAddress: string,
+  recipient: string
+): Promise<string> => {
+  const balance = isEth
+    ? await getEthWalletBalance(chainFrom.name, recipient)
+    : await getErc20TokenBalance(
+        tokenAddress,
+        recipient,
+        chainFrom.chainId,
+        chainFrom.name
+      );
+
+  return balance.toString();
+};
+
+export const getAmountOut = async (
+  isApproved: boolean,
+  isEth: boolean,
+  amount: string,
+  bridge: Bridge,
+  chainFrom: Chain,
+  chainTo: Chain,
+  token: Token
+): Promise<string> => {
+  try {
+    if (
+      isApproved ||
+      (isEth &&
+        !bridge.is_testnet &&
+        (bridge.name === "hop-bridge" || bridge.name === "hop-bridge-goerli"))
+    ) {
+      const amountOutRes = await getHopAmountOut(
+        chainFrom.chainId,
+        chainFrom.name,
+        token.symbol,
+        getHopChain(chainFrom.name),
+        getHopChain(chainTo.name),
+        parseUnits(amount, token.decimals)
+      );
+      return isEth
+        ? formatEther(amountOutRes).toString()
+        : formatUnits(amountOutRes, token.decimals);
+    }
+
+    return amount;
+  } catch (e) {
+    consoleLogger.error("Error getting amount out", e);
+    hydraLogger.error("Errorgetting amount out", e);
+  }
+};
+
 export const getPolygonRoute = async (
-  dto: GetBridgeTxRequestDto
+  dto: GetBridgeTxRequestDto,
+  chainId: number
 ): Promise<BuildBridgeTxResponseDto> => {
+  const hydraBridgeAddress = getHydraBridgeContractAddress(chainId);
   if (dto.tokenSymbol.toLowerCase() !== Asset[Asset.eth]) {
     return {
       data: getSendToPolygonEncodedFunction(dto),
-      to: ETH_CONTRACT,
+      to: hydraBridgeAddress,
       from: dto.recipient,
     };
   }
 
   return {
     data: getSendEthToPolygonEncodedFunction(dto.recipient),
-    to: ETH_CONTRACT,
+    to: hydraBridgeAddress,
     from: dto.recipient,
     value: ethers.utils.parseEther(dto.amount).toHexString(),
   };
@@ -139,20 +242,23 @@ export const getPolygonRoute = async (
 
 export const getHopRoute = async (
   dto: GetBridgeTxRequestDto,
-  chainToId: number
+  chainFromId: number,
+  chainToId: number,
+  isTestnet: boolean
 ): Promise<BuildBridgeTxResponseDto> => {
+  const hydraBridgeAddress = getHydraBridgeContractAddress(chainFromId);
   if (dto.tokenSymbol.toLowerCase() !== Asset[Asset.eth]) {
     return {
       data: getSendToL2HopEncodedFunction(dto, chainToId),
-      to: ETH_CONTRACT,
+      to: hydraBridgeAddress,
       from: dto.recipient,
     };
   }
 
-  if (!isTestnet) {
+  if (!isTestnet && dto.tokenSymbol.toLowerCase() === Asset[Asset.eth]) {
     return {
       data: getSendEthToL2HopEncodedFunction(dto, chainToId),
-      to: ETH_CONTRACT,
+      to: hydraBridgeAddress,
       from: dto.recipient,
       value: ethers.utils.parseEther(dto.amount).toHexString(),
     };

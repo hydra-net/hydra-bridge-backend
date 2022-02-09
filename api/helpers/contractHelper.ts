@@ -12,14 +12,41 @@ import { consoleLogger, hydraLogger } from "./hydraLogger";
 import { getTimestamp } from "./time";
 import { getProvider } from "./web3";
 
-const { ETH_CONTRACT, HOP_RELAYER, HOP_RELAYER_FEE } = process.env;
+const { ETH_CONTRACT, ETH_CONTRACT_GOERLI, HOP_RELAYER, HOP_RELAYER_FEE } =
+  process.env;
 
 const ERC20_INTERFACE = new Interface(erc20Abi);
 
-export const getEncodedApproveFunction = (amount: BigNumber): string => {
+export const getHydraBridgeContractAddress = (chainId: number): string =>
+  chainId === ethers.constants.One.toNumber()
+    ? ETH_CONTRACT
+    : ETH_CONTRACT_GOERLI;
+
+export const getIsEnoughBalance = (
+  amount: string,
+  decimals: number,
+  balance: string
+): boolean => {
   try {
+    const parsedAmountToSpend = parseUnits(amount, decimals);
+    const amountInBig = ethers.BigNumber.from(parsedAmountToSpend);
+    const balanceBig = ethers.BigNumber.from(balance);
+
+    return balanceBig.gte(amountInBig);
+  } catch (e) {
+    consoleLogger.error("Error getting is enough balance", e);
+    hydraLogger.error("Error getting is enough balance", e);
+  }
+};
+
+export const getEncodedApproveFunction = (
+  amount: BigNumber,
+  chainId: number
+): string => {
+  try {
+    const contractAddress = getHydraBridgeContractAddress(chainId);
     return ERC20_INTERFACE.encodeFunctionData("approve", [
-      ETH_CONTRACT,
+      contractAddress,
       ethers.utils.hexlify(amount),
     ]);
   } catch (e) {
@@ -32,10 +59,17 @@ export const getAlowanceAmounts = async (
   tokenAddress: string,
   owner: string,
   amount: string,
-  decimals: number
+  decimals: number,
+  chainId: number,
+  chainName: string
 ): Promise<AllowanceAmountsDto> => {
   try {
-    const allowanceRes = await getErc20AllowanceAmount(tokenAddress, owner);
+    const allowanceRes = await getErc20AllowanceAmount(
+      tokenAddress,
+      owner,
+      chainId,
+      chainName
+    );
 
     return {
       amountToSpend: ethers.BigNumber.from(
@@ -51,23 +85,32 @@ export const getAlowanceAmounts = async (
 
 export const getErc20AllowanceAmount = async (
   tokenAddress: string,
-  owner: string
+  owner: string,
+  chainId: number,
+  chainName: string
 ): Promise<BigNumber> => {
   try {
-    const rootToken = getContract(tokenAddress);
-    return await rootToken.functions.allowance(owner, ETH_CONTRACT);
+    const rootToken = getContract(tokenAddress, chainId, chainName);
+    const hydraBridgeAddress = getHydraBridgeContractAddress(chainId);
+    return await rootToken.functions.allowance(owner, hydraBridgeAddress);
   } catch (e) {
     consoleLogger.error("Error getting allowance", e);
     hydraLogger.error("Error getting allowance", e);
   }
 };
 
-export const getIsApproved = async (dto: IsApprovedDto) => {
+export const getIsApproved = async (
+  dto: IsApprovedDto,
+  chainId: number,
+  chainName: string
+) => {
   try {
     const { recipient, tokenAddress, amount, decimals } = dto;
     const amountAllowedResult = await getErc20AllowanceAmount(
       tokenAddress,
-      recipient
+      recipient,
+      chainId,
+      chainName
     );
 
     const amountToSpend = parseUnits(amount, decimals);
@@ -81,19 +124,29 @@ export const getIsApproved = async (dto: IsApprovedDto) => {
 
 export const getErc20TokenBalance = async (
   tokenAddress: string,
-  owner: string
+  owner: string,
+  chainId: number,
+  chainName: string
 ): Promise<BigNumber> => {
   try {
-    const tokenContract = getContract(tokenAddress);
+    const tokenContract = getContract(tokenAddress, chainId, chainName);
     return await tokenContract.functions.balanceOf(owner);
   } catch (e) {
-    consoleLogger.error("Error getting is approved to transfer erc20", e);
-    hydraLogger.error("Error getting is approved to transfer erc20", e);
+    consoleLogger.error("Error getting is erc20 token balance", e);
+    hydraLogger.error("Error getting is erc20 token balance", e);
   }
 };
 
-export const getContract = (address: string): Contract => {
-  return new ethers.Contract(address, erc20Abi, getProvider());
+export const getContract = (
+  address: string,
+  chainId: number,
+  chainName: string
+): Contract => {
+  return new ethers.Contract(
+    address,
+    erc20Abi,
+    getProvider(chainId, chainName)
+  );
 };
 
 export const getSendToPolygonEncodedFunction = (

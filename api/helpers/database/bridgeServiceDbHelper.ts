@@ -15,6 +15,7 @@ export const getRouteWithBridges = async (
       bridge: {
         select: {
           name: true,
+          is_testnet: true,
         },
       },
     },

@@ -1,6 +1,8 @@
 import {
   BuildBridgeTxResponseDto,
   ChainResponseDto,
+  GetBridgeTxRequestDto,
+  QuoteRequestDto,
   RouteResponseDto,
   TokenBalanceResponseDto,
   TokenResponseDto,
@@ -9,12 +11,14 @@ import { Token, Bridge, Route, Chain } from "@prisma/client";
 
 export const mapTokenToDto = (
   token: Token,
-  chainId: number
+  chainId: number,
+  chainName: string
 ): TokenResponseDto => {
   return {
     id: token.id,
     name: token.name,
     chainId: chainId,
+    chainName: chainName,
     address: token.address,
     decimals: token.decimals,
     symbol: token.symbol,
@@ -89,10 +93,24 @@ export const mapToChainResponseDto = (
       id: token.id,
       name: token.name,
       chainId: chain.chainId,
+      chainName: chain.name,
       address: token.address,
       decimals: token.decimals,
       symbol: token.symbol,
     },
     explorers: chain.explorers,
+  };
+};
+
+export const mapToGetBridgeTxRequestDto = (
+  dto: QuoteRequestDto,
+  token: Token
+): GetBridgeTxRequestDto => {
+  return {
+    recipient: dto.recipient,
+    amount: dto.amount,
+    tokenAddress: token.address,
+    tokenSymbol: token.symbol,
+    decimals: token.decimals,
   };
 };

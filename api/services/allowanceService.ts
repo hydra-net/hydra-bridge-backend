@@ -23,7 +23,7 @@ export const getAllowance = async (
   dto: AllowanceRequestDto
 ): Promise<ServiceResponseDto<AllowanceResponseDto>> => {
   try {
-    const chain = await getChainByChainId(Number.parseInt(dto.chainId));
+    const chain = await getChainByChainId(parseInt(dto.chainId));
 
     if (!chain) {
       return NotFound("Chain not found!");
@@ -37,7 +37,9 @@ export const getAllowance = async (
 
     const allowanceAmount = await getErc20AllowanceAmount(
       dto.tokenAddress,
-      dto.owner
+      dto.owner,
+      chain.chainId,
+      chain.name
     );
 
     return {
@@ -58,7 +60,7 @@ export const buildTx = async (
   dto: BuildAllowanceRequestDto
 ): Promise<ServiceResponseDto<BuildAllowanceResponseDto>> => {
   try {
-    const chain = await getChainByChainId(Number.parseInt(dto.chainId));
+    const chain = await getChainByChainId(parseInt(dto.chainId));
 
     if (!chain) {
       return NotFound("Chain not found!");
@@ -74,14 +76,16 @@ export const buildTx = async (
       dto.tokenAddress,
       dto.owner,
       dto.amount,
-      token.decimals
+      token.decimals,
+      chain.chainId,
+      chain.name
     );
 
     if (amountToSpend.gt(amountAllowed)) {
       return {
         status: 200,
         data: {
-          data: getEncodedApproveFunction(amountToSpend),
+          data: getEncodedApproveFunction(amountToSpend, chain.chainId),
           to: dto.tokenAddress,
           from: dto.owner,
         },

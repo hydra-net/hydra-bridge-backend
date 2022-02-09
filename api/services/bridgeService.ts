@@ -59,20 +59,24 @@ export const getQuote = async (
     const isEth = token.symbol.toString().toLowerCase() === Asset[Asset.eth];
 
     if (!isEth) {
-      isApproved = await getIsApproved({
-        amount: dto.amount,
-        decimals: token.decimals,
-        recipient: dto.recipient,
-        tokenAddress: token.address,
-      });
+      isApproved = await getIsApproved(
+        {
+          amount: dto.amount,
+          decimals: token.decimals,
+          recipient: dto.recipient,
+          tokenAddress: token.address,
+        },
+        chainFrom.chainId,
+        chainFrom.name
+      );
     }
 
     return {
       status: 200,
       data: {
-        fromAsset: mapTokenToDto(token, chainFrom.chainId),
+        fromAsset: mapTokenToDto(token, chainFrom.chainId, chainFrom.name),
         fromChainId: chainFrom.chainId,
-        toAsset: mapTokenToDto(token, chainTo.chainId),
+        toAsset: mapTokenToDto(token, chainTo.chainId, chainFrom.name),
         toChainId: chainTo.chainId,
         routes: await getQuoteRoutes(
           token,
@@ -140,7 +144,7 @@ export const buildTx = async (
     ) {
       return {
         status: 200,
-        data: await getPolygonRoute(txRouteDto),
+        data: await getPolygonRoute(txRouteDto, chainFrom.chainId),
       };
     }
     if (
@@ -149,7 +153,12 @@ export const buildTx = async (
     ) {
       return {
         status: 200,
-        data: await getHopRoute(txRouteDto, chainTo.chainId),
+        data: await getHopRoute(
+          txRouteDto,
+          chainFrom.chainId,
+          chainTo.chainId,
+          route.bridge.is_testnet
+        ),
       };
     }
   } catch (e) {

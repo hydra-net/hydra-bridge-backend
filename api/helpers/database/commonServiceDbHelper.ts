@@ -2,18 +2,15 @@ import { TokenResponseDto } from "../../common/dtos";
 import prisma from "./db";
 import { mapTokenToDto } from "../mappers/mapperDto";
 import { Token } from "@prisma/client";
-import { getChainByChainId } from "./chainsDbHelper";
 
 export const getTokensByChainId = async (
-  chainId: number
+  id: number
 ): Promise<TokenResponseDto[]> => {
-  const chain = await getChainByChainId(chainId);
-
   const tokens: TokenResponseDto[] = [];
-  if (chain) {
+  if (id && id > 0) {
     const chainTokens = await prisma.chainsOnTokens.findMany({
       where: {
-        chain_id: chain.id,
+        chain_id: id,
       },
       include: {
         token: {
@@ -29,6 +26,7 @@ export const getTokensByChainId = async (
           select: {
             id: true,
             chainId: true,
+            name: true,
           },
         },
       },
@@ -37,7 +35,8 @@ export const getTokensByChainId = async (
     for (const chainToken of chainTokens) {
       const dto: TokenResponseDto = mapTokenToDto(
         chainToken.token as Token,
-        chainToken.chain.chainId
+        chainToken.chain.chainId,
+        chainToken.chain.name
       );
       tokens.push(dto);
     }
