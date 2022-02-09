@@ -73,6 +73,7 @@ export interface TokenResponseDto {
   name: string;
   address: string;
   chainId: number;
+  chainName: string;
   decimals: number;
   symbol: string;
 }

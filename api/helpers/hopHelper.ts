@@ -1,19 +1,25 @@
 import { Chain, Hop } from "@hop-protocol/sdk";
 import { BigNumber } from "ethers";
 import { consoleLogger, hydraLogger } from "./hydraLogger";
-import { getProvider } from "./web3";
+import { getNetworkName, getProvider } from "./web3";
 
 export const getHopAmountOut = async (
-  networkName: string,
+  chainFromId: number,
+  chainFromName: string,
   token: string,
-  chainFrom: Chain,
-  chainTo: Chain,
+  hopChainFrom: Chain,
+  hopChainTo: Chain,
   amount: BigNumber
 ): Promise<string> => {
   try {
-    const hop = new Hop(networkName, getProvider());
+    const networkName = getNetworkName(chainFromName);
+    const hop = new Hop(networkName, getProvider(chainFromId, networkName));
     const bridge = hop.bridge(token);
-    const amountOut = await bridge.getSendData(amount, chainFrom, chainTo);
+    const amountOut = await bridge.getSendData(
+      amount,
+      hopChainFrom,
+      hopChainTo
+    );
     return parseFloat(amountOut.estimatedReceived.toString()) === 0.0
       ? amount.toString()
       : amountOut.estimatedReceived.toString();

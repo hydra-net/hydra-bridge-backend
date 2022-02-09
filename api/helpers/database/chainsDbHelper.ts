@@ -7,11 +7,8 @@ export const getChainByChainId = async (chainId: number) =>
     },
   });
 
-export const getChainsWithToken = async (isTestnet: boolean) =>
+export const getChainsWithToken = async () =>
   await prisma.chain.findMany({
-    where: {
-      is_testnet: isTestnet,
-    },
     include: {
       token: {
         select: {
