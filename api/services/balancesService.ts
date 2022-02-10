@@ -1,5 +1,9 @@
 import { ServiceResponseDto, TokenBalanceResponseDto } from "../common/dtos";
-import { NotFound, ServerError } from "../helpers/serviceErrorHelper";
+import {
+  BadRequest,
+  NotFound,
+  ServerError,
+} from "../helpers/serviceErrorHelper";
 import { consoleLogger, hydraLogger } from "../helpers/hydraLogger";
 import { getEthWalletBalance } from "../helpers/web3";
 import { getTokensByChainId } from "../helpers/database/commonServiceDbHelper";
@@ -18,6 +22,10 @@ export const getWalletBalances = async (
 
     if (!chain) {
       return NotFound("Chain not found!");
+    }
+
+    if (!chain.is_sending_enabled) {
+      return BadRequest("Chain not supported!");
     }
 
     const tokens = await getTokensByChainId(chain.id);
