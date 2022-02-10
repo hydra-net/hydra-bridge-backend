@@ -76,6 +76,7 @@ $ npx prisma migrate add_new_field
 ## Specification
 
 - api specification is defined in `swagger.json` file and when server starts specification is automatically generated
+- if your server is using `https` choose `https` scheme in dropdown to prevent CORS error
 
 ## Deployment
 
