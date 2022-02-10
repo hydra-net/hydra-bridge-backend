@@ -18,6 +18,7 @@ import {
 } from "../helpers/contractHelper";
 import { getChainByChainId } from "../helpers/database/chainsDbHelper";
 import { getTokenByAddress } from "../helpers/database/tokensDbHelper";
+import { getChainToken } from "../helpers/database/chainTokenDbHelper";
 
 export const getAllowance = async (
   dto: AllowanceRequestDto
@@ -29,10 +30,20 @@ export const getAllowance = async (
       return NotFound("Chain not found!");
     }
 
+    if (!chain.is_sending_enabled) {
+      return BadRequest("Chain not supported!");
+    }
+
     const token = await getTokenByAddress(dto.tokenAddress);
 
     if (!token) {
       return NotFound("Token not found!");
+    }
+
+    const chainToken = await getChainToken(chain.id, token.id);
+
+    if (!chainToken) {
+      return BadRequest("Token not supported on chain!");
     }
 
     const allowanceAmount = await getErc20AllowanceAmount(
@@ -66,10 +77,20 @@ export const buildTx = async (
       return NotFound("Chain not found!");
     }
 
+    if (!chain.is_sending_enabled) {
+      return BadRequest("Chain not supported!");
+    }
+
     const token = await getTokenByAddress(dto.tokenAddress);
 
     if (!token) {
       return NotFound("Token not found!");
+    }
+
+    const chainToken = await getChainToken(chain.id, token.id);
+
+    if (!chainToken) {
+      return BadRequest("Token not supported on chain!");
     }
 
     const { amountToSpend, amountAllowed } = await getAlowanceAmounts(

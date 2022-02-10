@@ -12,3 +12,14 @@ export const getRoutesByChainBridgeIds = async (
       bridge_id: { in: bridgeIds },
     },
   });
+
+export const getRoutesByChains = async (
+  chainFromId: number,
+  chainToId: number
+) =>
+  await prisma.route.findMany({
+    where: {
+      chain_from_id: chainFromId,
+      chain_to_id: chainToId,
+    },
+  });

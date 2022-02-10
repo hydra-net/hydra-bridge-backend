@@ -3,10 +3,9 @@ import routes from "./api/routes";
 import winston, { format } from "winston";
 import expressWinston from "express-winston";
 import swaggerUI from "swagger-ui-express";
-/* eslint-disable @typescript-eslint/no-var-requires */
-const swaggerDoc = require("./swagger.json");
+import swaggerDocJson from "./swagger.json";
 import cors from "cors";
-require("dotenv").config();
+import "dotenv/config";
 
 const { URL, PORT, VERSION, NODE_ENV } = process.env;
 
@@ -31,7 +30,7 @@ app.use(
 
 app.use(`/api/v${VERSION}`, routes);
 
-app.use("/swagger", swaggerUI.serve, swaggerUI.setup(swaggerDoc));
+app.use("/swagger", swaggerUI.serve, swaggerUI.setup(swaggerDocJson));
 
 app.listen(PORT, () => {
   if (NODE_ENV === "dev") {

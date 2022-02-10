@@ -2,7 +2,11 @@ import { Interface } from "@ethersproject/abi";
 import { BigNumber, Contract, ethers } from "ethers";
 import { parseUnits } from "ethers/lib/utils";
 import { erc20Abi } from "../common/abis/erc20Abi";
-import { HYDRA_BRIDGE_INTERFACE } from "../common/constants";
+import {
+  HOP_RELAYER,
+  HOP_RELAYER_FEE,
+  HYDRA_BRIDGE_INTERFACE,
+} from "../common/constants";
 import {
   AllowanceAmountsDto,
   GetBridgeTxRequestDto,
@@ -12,8 +16,7 @@ import { consoleLogger, hydraLogger } from "./hydraLogger";
 import { getTimestamp } from "./time";
 import { getProvider } from "./web3";
 
-const { ETH_CONTRACT, ETH_CONTRACT_GOERLI, HOP_RELAYER, HOP_RELAYER_FEE } =
-  process.env;
+const { ETH_CONTRACT, ETH_CONTRACT_GOERLI } = process.env;
 
 const ERC20_INTERFACE = new Interface(erc20Abi);
 

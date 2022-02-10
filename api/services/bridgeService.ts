@@ -24,35 +24,46 @@ import {
 } from "../helpers/serviceHelpers/bridgeServiceHelper";
 import { getIsApproved } from "../helpers/contractHelper";
 import { Asset } from "../common/enums";
+import { getRoutesByChains } from "../helpers/database/routesDbHelper";
 
 export const getQuote = async (
   dto: QuoteRequestDto
 ): Promise<ServiceResponseDto<QuoteResponseDto>> => {
   try {
+    if (parseFloat(dto.amount) <= 0) {
+      return BadRequest("Amount has to be greater than 0!");
+    }
+
     const token = await getTokenById(Number.parseInt(dto.fromAsset));
-
-    const chainFrom = await getChainByChainId(Number.parseInt(dto.fromChainId));
-
-    const chainTo = await getChainByChainId(Number.parseInt(dto.toChainId));
 
     if (!token) {
       return NotFound("Asset not found!");
     }
 
+    const chainFrom = await getChainByChainId(Number.parseInt(dto.fromChainId));
+
     if (!chainFrom) {
       return BadRequest("Chain from not found!");
     }
+
+    const chainTo = await getChainByChainId(Number.parseInt(dto.toChainId));
 
     if (!chainTo) {
       return BadRequest("Chain to not found!");
     }
 
-    if (!chainFrom.is_sending_enabled && !chainTo.is_receiving_enabled) {
-      return BadRequest("Transfer between chains not supported");
+    const routes = await getRoutesByChains(chainFrom.id, chainTo.id);
+
+    if (
+      !chainFrom.is_sending_enabled ||
+      !chainTo.is_receiving_enabled ||
+      routes.length === 0
+    ) {
+      return BadRequest("Transfer between chains not supported!");
     }
 
     if (chainFrom.id === chainTo.id) {
-      return BadRequest("Pick different chains");
+      return BadRequest("Pick different chains!");
     }
 
     let isApproved = false;
