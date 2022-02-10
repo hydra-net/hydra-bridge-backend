@@ -10,7 +10,7 @@
     }
   },
   "basePath": "/api/v1",
-  "schemes": ["http"],
+  "schemes": ["http", "https"],
   "consumes": ["application/json"],
   "produces": ["application/json"],
 
@@ -23,13 +23,13 @@
           {
             "name": "chainId",
             "in": "query",
-            "description": "Chain id to bridge",
+            "description": "Chain id from where assets are moved",
             "required": "true"
           },
           {
             "name": "owner",
             "in": "query",
-            "description": "Owner of address that checks allowance",
+            "description": "Address that needs to be approved",
             "required": "true"
           },
           {
@@ -87,7 +87,7 @@
           {
             "name": "chainId",
             "in": "query",
-            "description": "Chain id to bridge",
+            "description": "Chain id from where assets are moved",
             "required": "true"
           },
           {
