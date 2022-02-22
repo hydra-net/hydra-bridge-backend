@@ -1,0 +1,823 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "version": "1.0.0",
+    "title": "Hydra Bridge",
+    "description": "Hydra Bridge API",
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  },
+  "basePath": "/api/v1",
+  "schemes": ["http", "https"],
+  "consumes": ["application/json"],
+  "produces": ["application/json"],
+
+  "paths": {
+    "/approval/check-allowance": {
+      "get": {
+        "tags": ["Allowances"],
+        "summary": "Check allowance for user",
+        "parameters": [
+          {
+            "name": "chainId",
+            "in": "query",
+            "description": "Chain id from where assets are moved",
+            "required": "true"
+          },
+          {
+            "name": "owner",
+            "in": "query",
+            "description": "Address that needs to be approved",
+            "required": "true"
+          },
+          {
+            "name": "tokenAddress",
+            "in": "query",
+            "description": "Token address of tokens to spend",
+            "required": "true"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/AllowanceDto"
+            }
+          },
+          "400": {
+            "description": "Client Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/approval/build-tx": {
+      "get": {
+        "tags": ["Allowances"],
+        "summary": "Build transaction for asset allowance",
+        "parameters": [
+          {
+            "name": "chainId",
+            "in": "query",
+            "description": "Chain id from where assets are moved",
+            "required": "true"
+          },
+          {
+            "name": "owner",
+            "in": "query",
+            "description": "Owner of address that checks allowance",
+            "required": "true"
+          },
+          {
+            "name": "tokenAddress",
+            "in": "query",
+            "description": "Token address of tokens to spend",
+            "required": "true"
+          },
+          {
+            "name": "amount",
+            "in": "query",
+            "description": "Amount to transfer",
+            "required": "true"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/BuildAllowanceResponseDto"
+            }
+          },
+          "400": {
+            "description": "Client Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/bridge/build-tx": {
+      "get": {
+        "tags": ["Bridge"],
+        "summary": "Build transaction for bridging assets",
+        "parameters": [
+          {
+            "name": "recipient",
+            "in": "query",
+            "description": "Recipient of bridged assets",
+            "required": "true"
+          },
+          {
+            "name": "fromAsset",
+            "in": "query",
+            "description": "Asset from who we bridge",
+            "required": "true"
+          },
+          {
+            "name": "fromChainId",
+            "in": "query",
+            "description": "Chain from who we bridge",
+            "required": "true"
+          },
+          {
+            "name": "toAsset",
+            "in": "query",
+            "description": "Asset to who we bridge",
+            "required": "true"
+          },
+          {
+            "name": "toChainId",
+            "in": "query",
+            "description": "Chain to who we bridge",
+            "required": "true"
+          },
+          {
+            "name": "amount",
+            "in": "query",
+            "description": "Amount to transfer",
+            "required": "true"
+          },
+          {
+            "name": "routeId",
+            "in": "query",
+            "description": "ID of transfer route",
+            "required": "true"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/BuildBridgeTxResponseDto"
+            }
+          },
+          "400": {
+            "description": "Client Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/bridge/quote": {
+      "get": {
+        "tags": ["Bridge"],
+        "summary": "Get quote for bridge routes",
+        "parameters": [
+          {
+            "name": "recipient",
+            "in": "query",
+            "description": "Recipent of transfer",
+            "required": "true"
+          },
+          {
+            "name": "fromAsset",
+            "in": "query",
+            "description": "Asset from who we bridge",
+            "required": "true"
+          },
+          {
+            "name": "fromChainId",
+            "in": "query",
+            "description": "Chain from who we bridge",
+            "required": "true"
+          },
+          {
+            "name": "toAsset",
+            "in": "query",
+            "description": "Asset to who we bridge",
+            "required": "true"
+          },
+          {
+            "name": "toChainId",
+            "in": "query",
+            "description": "Chain to who we bridge",
+            "required": "true"
+          },
+          {
+            "name": "amount",
+            "in": "query",
+            "description": "Amount to transfer",
+            "required": "true"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/QuotesResponseDto"
+              }
+            }
+          },
+          "400": {
+            "description": "Client Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/common/tokens": {
+      "get": {
+        "tags": ["Common"],
+        "summary": "Get tokens for transfering",
+        "parameters": [
+          {
+            "name": "chainId",
+            "in": "query",
+            "description": "Official chainId of chain we are transfering from",
+            "required": "true"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/TokensResponseDto"
+            }
+          },
+          "400": {
+            "description": "Client Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/common/chains": {
+      "get": {
+        "tags": ["Common"],
+        "summary": "Get chains for transfering from, to",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/ChainsResponseDto"
+            }
+          },
+          "400": {
+            "description": "Client Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/balances": {
+      "get": {
+        "tags": ["Balances"],
+        "summary": "Get all token balances of wallet",
+        "parameters": [
+          {
+            "name": "address",
+            "in": "query",
+            "description": "Wallet address",
+            "required": "true"
+          },
+          {
+            "name": "chainId",
+            "in": "query",
+            "description": "Official chainId of chain we are transfering from",
+            "required": "true"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/TokenBalancesResponseDto"
+              }
+            }
+          },
+          "400": {
+            "description": "Client Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "ErrorDto": {
+      "properties": {
+        "status": {
+          "type": "number"
+        },
+        "message": {
+          "type": "string"
+        }
+      }
+    },
+    "AllowanceDto": {
+      "properties": {
+        "value": {
+          "type": "string"
+        },
+        "tokenAddress": {
+          "type": "string"
+        }
+      }
+    },
+    "BuildAllowanceRequestDto": {
+      "properties": {
+        "chainId": {
+          "type": "string"
+        },
+        "owner": {
+          "type": "string"
+        },
+        "spender": {
+          "type": "string"
+        },
+        "tokkenAddress": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "string"
+        }
+      }
+    },
+    "BuildAllowanceResponseDto": {
+      "properties": {
+        "data": {
+          "type": "string"
+        },
+        "to": {
+          "type": "string"
+        },
+        "from": {
+          "type": "string"
+        }
+      }
+    },
+    "BuildBridgeTxRequestDto": {
+      "required": [
+        "recipient",
+        "fromAsset",
+        "fromChainId",
+        "toAsset",
+        "toChainId",
+        "amount"
+      ],
+      "properties": {
+        "recipient": {
+          "type": "string"
+        },
+        "fromAsset": {
+          "type": "string"
+        },
+        "fromChainId": {
+          "type": "string"
+        },
+        "toAsset": {
+          "type": "string"
+        },
+        "toChainId": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "string"
+        }
+      }
+    },
+
+    "BuildBridgeTxResponseDto": {
+      "properties": {
+        "data": {
+          "type": "string"
+        },
+        "to": {
+          "type": "string"
+        },
+        "from": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        },
+        "bridgeId": {
+          "type": "string"
+        }
+      }
+    },
+    "QuoteRequestDto": {
+      "required": [
+        "fromAsset",
+        "fromChainId",
+        "toAsset",
+        "toChainId",
+        "amount"
+      ],
+      "properties": {
+        "fromAsset": {
+          "type": "string"
+        },
+        "fromChainId": {
+          "type": "string"
+        },
+        "toAsset": {
+          "type": "string"
+        },
+        "toChainId": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "string"
+        }
+      }
+    },
+
+    "QuoteResponseDto": {
+      "properties": {
+        "fromAsset": {
+          "$ref": "#/definitions/TokenResponseDto"
+        },
+        "fromChainId": {
+          "type": "number"
+        },
+        "toAsset": {
+          "$ref": "#/definitions/TokenResponseDto"
+        },
+        "toChainId": {
+          "type": "number"
+        },
+        "routes": {
+          "type": "array",
+          "$ref": "#/definitions/RouteResponseDto"
+        },
+        "amount": {
+          "type": "string"
+        },
+        "isApproved": {
+          "type": "boolean"
+        }
+      }
+    },
+    "RouteResponseDto": {
+      "properties": {
+        "id": {
+          "type": "number"
+        },
+        "allowanceTarget": {
+          "type": "string"
+        },
+        "bridgeRoute": {
+          "$ref": "#/definitions/BridgeRouteResponseDto"
+        },
+        "buildTx": {
+          "$ref": "#/definitions/BuildBridgeTxResponseDto"
+        },
+        "transactionCoastUsd": {
+          "type": "number"
+        }
+      }
+    },
+    "BridgeRouteResponseDto": {
+      "properties": {
+        "bridgeName": {
+          "type": "string"
+        },
+        "bridgeId": {
+          "type": "number"
+        },
+        "bridgeInfo": {
+          "$ref": "#/definitions/BridgeInfoResponseDto"
+        },
+        "fromAsset": {
+          "$ref": "#/definitions/TokenResponseDto"
+        },
+        "fromChainId": {
+          "type": "number"
+        },
+        "toAsset": {
+          "$ref": "#/definitions/TokenResponseDto"
+        },
+        "toChainId": {
+          "type": "number"
+        },
+        "amountIn": {
+          "type": "string"
+        },
+        "amountOut": {
+          "type": "string"
+        }
+      }
+    },
+    "BridgeInfoResponseDto": {
+      "properties": {
+        "serviceTime": {
+          "type": "number"
+        },
+        "displayName": {
+          "type": "string"
+        },
+        "isTestnet": {
+          "type": "boolean"
+        }
+      }
+    },
+    "QuotesResponseDto": {
+      "type": "array",
+      "$ref": "#/definitions/QuoteResponseDto"
+    },
+    "TokensResponseDto": {
+      "properties": {
+        "success": {
+          "type": "boolean"
+        },
+        "results": {
+          "type": "array",
+          "$ref": "#/definitions/TokenResponseDto"
+        }
+      }
+    },
+    "TokenResponseDto": {
+      "properties": {
+        "id": {
+          "type": "number"
+        },
+        "name": {
+          "type": "string"
+        },
+        "address": {
+          "type": "string"
+        },
+        "chainId": {
+          "type": "number"
+        },
+        "decimals": {
+          "type": "number"
+        },
+        "symbol": {
+          "type": "string"
+        }
+      }
+    },
+    "ChainsResponseDto": {
+      "properties": {
+        "success": {
+          "type": "boolean"
+        },
+        "results": {
+          "type": "array",
+          "$ref": "#/definitions/ChainResponseDto"
+        }
+      }
+    },
+    "ChainResponseDto": {
+      "properties": {
+        "chainId": {
+          "type": "number"
+        },
+        "name": {
+          "type": "string"
+        },
+        "isL1": {
+          "type": "boolean"
+        },
+        "isTestnet": {
+          "type": "boolean"
+        },
+        "isSendingEnabled": {
+          "type": "boolean"
+        },
+        "isReceivingEnabled": {
+          "type": "boolean"
+        },
+        "currency": {
+          "$ref": "#/definitions/TokenResponseDto"
+        },
+        "explorers": {
+          "type": "array"
+        }
+      }
+    },
+    "TokenBalanceResponseDto": {
+      "properties": {
+        "tokenId": {
+          "type": "number"
+        },
+        "chainId": {
+          "type": "string"
+        },
+        "address": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "symbol": {
+          "type": "string"
+        },
+        "decimals": {
+          "type": "number"
+        },
+        "price": {
+          "type": "number"
+        },
+        "amount": {
+          "type": "string"
+        },
+        "currency": {
+          "type": "string"
+        }
+      }
+    },
+    "TokenBalancesResponseDto": {
+      "properties": {
+        "success": {
+          "type": "boolean"
+        },
+        "results": {
+          "type": "array",
+          "$ref": "#/definitions/TokenBalanceResponseDto"
+        }
+      }
+    }
+  },
+
+  "apis": ["api/routes/index.ts"]
+}
